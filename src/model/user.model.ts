@@ -28,13 +28,13 @@ interface UserDoc extends Document {
 };
 
 const UserSchema = new Schema({
-    googleId: {type:String, required:false},
-    facebookId: {type:String, required:false},
+    googleId: { type: String, required: false },
+    facebookId: { type: String, required: false },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true },
-    phone: { type: String, required: true },
-    password: { type: String, required: true },
+    phone: { type: String, required: false },
+    password: { type: String, required: false },
     birthday: { type: Date },
     home_address: { type: String },
     office_address: { type: String },
@@ -46,7 +46,7 @@ const UserSchema = new Schema({
     last_login: { type: Date },
     date_joined: { type: Date },
     del_falg: { type: Number, default: 0 },
-    salt: { type: String, required: true },
+    salt: { type: String, required: false },
     verified: { type: Boolean, required: true, default: false },
     otp: { type: Number, required: true, },
     otpExpiryTime: { type: Date, required: true, },

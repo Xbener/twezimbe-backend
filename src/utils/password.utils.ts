@@ -58,6 +58,7 @@ export const GenerateToken = async (payload: UserPayload) => {
  */
 export const ValidateToken = async (req: Request) => {
     const signature = req.get('Authorization');
+    console.log(signature)
     if (signature) {
         const payload = jwt.verify(signature.split(' ')[1], SECRET_KEY as string) as UserPayload;
         req.user = payload;

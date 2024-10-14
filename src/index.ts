@@ -42,7 +42,6 @@ const StartServer = async () => {
         cb(null, user);
     })
 
-    app.get('/api/v1/auth/facebook', passport.authenticate("facebook"))
     app.get('/api/v1/auth/google', passport.authenticate("google", { scope: ['profile', 'email'] }))
     app.get('/api/v1/auth/google/callback', passport.authenticate('google', { failureRedirect: '/api/v1/auth/google' }), async (req, res, next) => {
 
@@ -53,6 +52,19 @@ const StartServer = async () => {
         });
         res.redirect(`${process.env.FRONTEND_URL}?token=${token}&user=${req.user}`)
     })
+    
+    
+    app.get('/api/v1/auth/facebook', passport.authenticate("facebook", { scope: ['public_profile', 'email'] }))
+    app.get('/api/v1/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/api/v1/auth/facebook' }), async (req, res, next) => {
+
+        const token = await GenerateToken({
+            _id: req.user?._id || '',
+            email: req.user?.email || '',
+            verified: req.user?.verified || false
+        });
+        res.redirect(`${process.env.FRONTEND_URL}?token=${token}&user=${req.user}`)
+    })
+
 
 
     app.listen(3001, () => console.log('Server is running on port 3001'));

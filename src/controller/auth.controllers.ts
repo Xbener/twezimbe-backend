@@ -22,14 +22,14 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
     req.body.salt = salt;
     req.body.otpExpiryTime = expiryDate;
 
-    
+
     if (req.body.role === 'Manager') {
         req.body.verified = true;
     }
-    
+
     // Record account
     const recordedUser = await UserModel.create(req.body);
-    
+
     var emailMessageBody = '';
     if (recordedUser.role === 'Manager') {
         emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.CLIENT_URL}/manager/auth/verifyotp?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
@@ -46,9 +46,9 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
 
     //save user_role
 
-    const userRole = await RoleModel.findOne({ role_name: 'User'});
-    
-    const roleUser = await RoleUser.create({role_id: userRole?._id, user_id: recordedUser._id})
+    const userRole = await RoleModel.findOne({ role_name: 'User' });
+
+    const roleUser = await RoleUser.create({ role_id: userRole?._id, user_id: recordedUser._id })
     console.log("role_user", roleUser);
 
     // Send response
@@ -79,7 +79,7 @@ export const signIn = asyncWrapper(async (req: Request, res: Response, next: Nex
         verified: existingUser.verified
     });
 
-    const { password: hashedPassword, salt,otp, otpExpiryTime,verified, ...rest } = existingUser._doc;
+    const { password: hashedPassword, salt, otp, otpExpiryTime, verified, ...rest } = existingUser._doc;
 
     // Send response
     res
@@ -90,11 +90,11 @@ export const signIn = asyncWrapper(async (req: Request, res: Response, next: Nex
 
 export const getUserProfile = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const authToken = req.get('Authorization');
-    
+
     if (!authToken?.split(' ')[1]) {
         return res.status(401).json({ message: "Access denied!" });
     }
-    
+
     const isValid = await isTokenValid(req);
     if (!isValid) {
         return res.status(401).json({ message: "Access denied!" });
@@ -105,14 +105,14 @@ export const getUserProfile = asyncWrapper(async (req: Request, res: Response, n
     if (!existingUser) {
         return res.status(400).json({ message: "User not found" });
     }
-    
+
     const token = await GenerateToken({
         _id: existingUser._id,
         email: existingUser.email,
         verified: existingUser.verified
     });
 
-    const { password: hashedPassword, salt,otp, otpExpiryTime,verified, ...rest } = existingUser._doc;
+    const { password: hashedPassword, salt, otp, otpExpiryTime, verified, ...rest } = existingUser._doc;
 
     // Send response
     res
@@ -138,7 +138,7 @@ export const regenerateOTP = asyncWrapper(async (req: Request, res: Response, ne
 
     // Send email
     await sendEmail(foundUser.email, "Verify your account", `Hello ${foundUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.CLIENT_URL}/verifyotp?id=${foundUser._id}\n\nBest regards,\n\nTwezimbe`);
-    
+
     // Send response
     res.status(200).json({ message: "OTP resent!" });
 });
@@ -147,7 +147,7 @@ export const regenerateOTP = asyncWrapper(async (req: Request, res: Response, ne
 export const verifyOTP = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body);
     const foundUser = await UserModel.findOne({ otp: req.body.otp });
-    
+
     if (!foundUser) {
         return res.status(400).json({ message: "Invalid OTP" });
     };
@@ -183,12 +183,12 @@ export const forgotPassword = asyncWrapper(async (req: Request, res: Response, n
         expirationDate: new Date().getTime() + (60 * 1000 * 5),
     });
 
-    const link = `${process.env.CLIENT_URL}/resetpassword?token=${token}&id=${foundUser._id}`
+    const link = `${process.env.FRONTEND_URL}/public_pages/resetpassword?token=${token}&id=${foundUser._id}&use=reset-password`
     const emailBody = `Hello ${foundUser.lastName},\n\nClick on the link bellow to reset your password.\n\n${link}\n\nBest regards,\n\nTwezimbe`;
 
     await sendEmail(foundUser.email, "Reset your password", emailBody);
 
-    res.status(200).json({ message: "We sent you a reset password link on your email!" });
+    res.status(200).json({ message: "We sent you a reset password link on your email!", token });
 });
 
 
@@ -220,13 +220,13 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
 
     await UserModel.findByIdAndUpdate(req.user?._id, {
         $set: {
-          ...req.body
+            ...req.body
         },
         new: true
     });
-    
+
     const updatedUser = await UserModel.findById(req.user?._id);
-    
+
     if (!updatedUser) {
         return res.status(400).json({ message: "User not found" });
     };
@@ -234,11 +234,11 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
     res.status(200).json({ message: "Account info updated successfully!", user: updatedUser });
 });
 
-export const verifyToken = asyncWrapper(async(req: Request, res: Response, next: NextFunction) => {
+export const verifyToken = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const validToken = await isTokenValid(req);
 
     if (!validToken) {
         return res.status(400).json({ message: "Access denied" });
-    } 
+    }
     res.status(200).json({ message: "Token is valid" });
 });
