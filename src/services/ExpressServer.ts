@@ -9,9 +9,9 @@ import userRouter from '../routes/user.routes';
 export default async (app: Application) => {
     app.use(express.json());
     app.use('/images', express.static(path.join(__dirname, '../images')));
-    
+
     app.use(cors({
-        origin: [process.env.CLIENT_URL as string],
+        origin: [process.env.FRONTEND_URL as string],
         credentials: true,
         allowedHeaders: ['Content-Type', 'Authorization'],
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -19,7 +19,7 @@ export default async (app: Application) => {
         optionsSuccessStatus: 204,
     }));
 
-    app.get("/health", async(req: Request, res: Response ) => {
+    app.get("/health", async (req: Request, res: Response) => {
         res.send({
             message: "Health OK!"
         });
