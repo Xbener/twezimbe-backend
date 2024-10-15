@@ -8,6 +8,7 @@ const RoleSchema = new Schema({
     group_avatar: { type: String, required: true, default: 'default' },
     description: { type: String },
     tags: { type: String },
+    invite_link: { type: String, required: false },
     created_by: {
         type: ObjectId,
         ref: 'User'

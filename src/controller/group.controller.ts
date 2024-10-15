@@ -18,6 +18,8 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
 
 
     if (newGroup) {
+        newGroup.invite_link = `${process.env.FRONTEND_URL}/groups/invitation/${newGroup._id}`
+        await newGroup.save()
         const ManagerRole = await Role.findOne({ role_name: "GroupManager" })
         const UserRole = await Role.findOne({ role_name: "GroupUser" })
 
@@ -50,7 +52,7 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
             })
         })
 
-        res.status(200).json({ group: newGroup, message: "Group Created successfully" })
+        res.status(200).json({ group: newGroup, message: "Group Created successfully", invitationLink: newGroup.invite_link })
     }
 
 })
