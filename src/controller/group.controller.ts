@@ -6,7 +6,8 @@ import Role from '../model/role.model'
 import UserGroup from '../model/user_group.model'
 import RoleUser from "../model/user_role";
 import mongoose from "mongoose";
-import User from "../model/user.model";
+import User, { UserDoc } from "../model/user.model";
+import { sendEmail } from "../utils/notification.utils";
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
@@ -14,7 +15,7 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
     const existingGroup = await Group.findOne({ name: req.body.name });
     if (existingGroup) return res.status(403).json({ errors: `Group with ${existingGroup.name}. Please try a different name` })
-    const newGroup = await Group.create(req.body)
+    let newGroup = await Group.create(req.body)
 
 
     if (newGroup) {
@@ -51,6 +52,12 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
                 role_id: UserRole?.id
             })
         })
+
+        newGroup = await newGroup.populate('created_by')
+
+        const createdBy = newGroup.created_by as UserDoc
+
+        sendEmail(`${createdBy.email}`, "Twezimbe Groups - Invitation Link", `Use this link to invite members of your group ${newGroup.name} --> ${newGroup.invite_link}`)
 
         res.status(200).json({ group: newGroup, message: "Group Created successfully", invitationLink: newGroup.invite_link })
     }
@@ -273,7 +280,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
             $group: {
                 _id: '$_id',
                 group_id: { $first: '$_id' },
-                name: { $first: '$name' },
+                group_name: { $first: '$name' },
                 group_type: { $first: '$group_type' },
                 group_state: { $first: '$group_state' },
                 group_avatar: { $first: '$group_avatar' },
@@ -303,42 +310,46 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
 
 
 export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
-
     const isTokenValid = await ValidateToken(req);
-
 
     if (!isTokenValid) {
         return res.status(400).json({ message: "Access denied" });
-    };
-
+    }
 
     const existingGroup = await UserGroup.findOne({ user_id: req.body.user_id, group_id: req.body.group_id });
 
     if (existingGroup) {
         return res.status(400).json({ message: "You have already joined!" });
     } else {
-        const role = await Role.findOne({ role_name: "GroupUser" })
+        const role = await Role.findOne({ role_name: "GroupUser" });
 
         const newJoinGroup = await UserGroup.create({
-            user_id: req?.body?.user_id,
-            group_id: req?.body?.group_id,
+            user_id: req.body.user_id,
+            group_id: req.body.group_id,
             role_id: role?._id
         });
 
         if (newJoinGroup) {
-            const existingRole = await RoleUser.findOne({ user_id: req.body.user_id, role_id: role?._id })
+            const existingRole = await RoleUser.findOne({ user_id: req.body.user_id, role_id: role?._id });
 
             if (!existingRole) {
                 await RoleUser.create({
-                    user_id: req?.body?.user_id,
-                    role_id: role?.id
-                })
+                    user_id: req.body.user_id,
+                    role_id: role?._id
+                });
             }
 
-            res.status(201).json({ message: "newRole added successfully", group: newJoinGroup });
-        };
+            const group = await Group.findById(req.body.group_id).populate('created_by');
+
+            const createdByUser = group?.created_by as UserDoc; 
+
+            if (createdByUser && createdByUser.email) {
+                sendEmail(createdByUser.email, "Twezimbe Groups - New Member", `${group?.name} has a new member!`);
+            } else {
+                console.error('Could not find email for group owner');
+            }
+
+            res.status(201).json({ message: "New role added successfully", group: newJoinGroup });
+        }
     }
-
-
-
-})
+});
