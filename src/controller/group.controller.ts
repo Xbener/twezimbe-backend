@@ -131,7 +131,7 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         del_flag: '$del_flag',
                         createdAt: '$createdAt',
                         updatedAt: '$updatedAt',
-                        memberCount: 1 
+                        memberCount: 1
                     }
                 }
             ]);
@@ -220,4 +220,79 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
     } else {
         return res.status(400).json({ message: "Failed" });
     }
+});
+
+
+
+export const getGroupById = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    }
+
+    const existingUser = await User.findOne({ email: req.user?.email });
+    if (!existingUser) {
+        return res.status(400).json({ message: "User not found" });
+    }
+
+    const userId = existingUser?.id;
+
+    // Aggregation to get the group and its unique members
+    const groupDetails = await Group.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.params.groupId),
+                del_flag: 0, // Ensuring the group is not deleted
+            }
+        },
+        {
+            $lookup: {
+                from: 'user_groups', // Assuming this is the correct collection name for user groups
+                localField: '_id',
+                foreignField: 'group_id',
+                as: 'members'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users', // Collection containing user details
+                localField: 'members.user_id', // Assuming user_id field in user_groups
+                foreignField: '_id',
+                as: 'memberDetails'
+            }
+        },
+        {
+            $unwind: {
+                path: '$memberDetails',
+                preserveNullAndEmptyArrays: true // Keep the group even if there are no members
+            }
+        },
+        {
+            $group: {
+                _id: '$_id',
+                group_id: { $first: '$_id' },
+                name: { $first: '$name' },
+                group_type: { $first: '$group_type' },
+                group_state: { $first: '$group_state' },
+                group_avatar: { $first: '$group_avatar' },
+                description: { $first: '$description' },
+                tags: { $first: '$tags' },
+                created_by: { $first: '$created_by' },
+                del_flag: { $first: '$del_flag' },
+                createdAt: { $first: '$createdAt' },
+                updatedAt: { $first: '$updatedAt' },
+                members: { $addToSet: '$memberDetails' } // Collecting unique member details
+            }
+        }
+    ]);
+
+    if (!groupDetails.length) {
+        return res.status(404).json({ errors: "Group not found" });
+    }
+
+    res.status(200).json({
+        Success: true,
+        message: "Group found",
+        group: groupDetails[0] // Returning the first (and only) group
+    });
 });
