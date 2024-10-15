@@ -1,6 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import "dotenv/config";
-import express from 'express';
+import express, { Request, Response } from 'express';
 import Database from './services/Database';
 import ExpressServer from './services/ExpressServer';
 import passport from 'passport';
@@ -65,6 +65,10 @@ const StartServer = async () => {
         res.redirect(`${process.env.FRONTEND_URL}?token=${token}&user=${req.user}`)
     })
 
+
+    app.all('*', (req: Request, res: Response) => {
+        res.status(404).json({ errors: 'Route Not Found' });
+    })
 
 
     app.listen(process.env.PORT || 3001, () => console.log('Server is running on port 3001'));

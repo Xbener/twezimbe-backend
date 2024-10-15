@@ -5,6 +5,7 @@ import ErrorHandlerMiddleware from '../middlewares/ErrorHandler';
 import productRouter from '../routes/application.routes';
 import roleRouter from '../routes/role.routes';
 import userRouter from '../routes/user.routes';
+import GroupsRouter from '../routes/group.route'
 
 export default async (app: Application) => {
     app.use(express.json());
@@ -28,8 +29,10 @@ export default async (app: Application) => {
     app.use('/api/v1/auth', userRouter);
     app.use('/api/v1/product', productRouter);
     app.use('/api/v1/role', roleRouter);
+    app.use('/api/v1/groups', GroupsRouter)
 
     app.use(ErrorHandlerMiddleware);
+
 
     return app;
 }
