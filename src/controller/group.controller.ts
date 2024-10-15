@@ -146,3 +146,78 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
         return res.status(400).json({ message: "Failed to fetch unjoined groups" });
     }
 })
+
+
+export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    }
+
+    const existingUser = await User.findOne({ email: req.user?.email });
+    if (!existingUser) {
+        return res.status(400).json({ message: "User not found" });
+    }
+
+    const userId = existingUser?.id;
+
+    if (userId) {
+        try {
+            if (typeof userId !== 'string' || !mongoose.Types.ObjectId.isValid(userId)) {
+                throw new Error('Invalid userId: must be a valid ObjectId string');
+            }
+
+            const result = await UserGroup.aggregate([
+                {
+                    $match: { user_id: new mongoose.Types.ObjectId(userId) }
+                },
+                {
+                    $lookup: {
+                        from: 'roles', // collection name in MongoDB
+                        localField: 'role_id',
+                        foreignField: '_id',
+                        as: 'roleDetails'
+                    }
+                },
+                {
+                    $unwind: '$roleDetails'
+                },
+                {
+                    $lookup: {
+                        from: 'groups', // Collection name in MongoDB
+                        localField: 'group_id',
+                        foreignField: '_id',
+                        as: 'groupDetails'
+                    }
+                },
+                {
+                    $unwind: '$groupDetails'
+                },
+                {
+                    $group: {
+                        _id: '$groupDetails._id', // Group by group ID
+                        group_id: { $first: '$groupDetails._id' },
+                        role_name: { $first: '$roleDetails.role_name' },
+                        group_name: { $first: '$groupDetails.name' },
+                        group_type: { $first: '$groupDetails.group_type' },
+                        group_state: { $first: '$groupDetails.group_state' },
+                        group_avatar: { $first: '$groupDetails.group_avatar' },
+                        description: { $first: '$groupDetails.description' },
+                        tags: { $first: '$groupDetails.tags' },
+                        created_by: { $first: '$groupDetails.created_by' },
+                        del_flag: { $first: '$groupDetails.del_flag' },
+                        createdAt: { $first: '$groupDetails.createdAt' },
+                        updatedAt: { $first: '$groupDetails.updatedAt' }
+                    }
+                }
+            ]);
+
+            res.status(201).json({ message: "successfully", groups: result });
+
+        } catch (err) {
+            throw err;
+        }
+    } else {
+        return res.status(400).json({ message: "Failed" });
+    }
+});
