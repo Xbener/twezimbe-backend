@@ -298,3 +298,47 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
         group: groupDetails[0] // Returning the first (and only) group
     });
 });
+
+
+
+
+export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+
+    const isTokenValid = await ValidateToken(req);
+
+
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+
+    const existingGroup = await UserGroup.findOne({ user_id: req.body.user_id, group_id: req.body.group_id });
+
+    if (existingGroup) {
+        return res.status(400).json({ message: "You have already joined!" });
+    } else {
+        const role = await Role.findOne({ role_name: "GroupUser" })
+
+        const newJoinGroup = await UserGroup.create({
+            user_id: req?.body?.user_id,
+            group_id: req?.body?.group_id,
+            role_id: role?._id
+        });
+
+        if (newJoinGroup) {
+            const existingRole = await RoleUser.findOne({ user_id: req.body.user_id, role_id: role?._id })
+
+            if (!existingRole) {
+                await RoleUser.create({
+                    user_id: req?.body?.user_id,
+                    role_id: role?.id
+                })
+            }
+
+            res.status(201).json({ message: "newRole added successfully", group: newJoinGroup });
+        };
+    }
+
+
+
+})
