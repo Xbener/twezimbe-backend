@@ -5,6 +5,8 @@ import Group from '../model/group.model'
 import Role from '../model/role.model'
 import UserGroup from '../model/user_group.model'
 import RoleUser from "../model/user_role";
+import mongoose from "mongoose";
+import User from "../model/user.model";
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
@@ -57,8 +59,90 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
 
 export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
-    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
-    const allGroupList = await Group.find({ $and: [{ del_flag: 0 }, { group_state: "Public" }] })
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    }
 
-    res.status(200).json({ message: "Success", groups: allGroupList })
+    const existingUser = await User.findOne({ email: req.user?.email });
+
+    if (!existingUser) {
+        return res.status(400).json({ message: "User not found" });
+    }
+
+    const userId = existingUser?.id;
+
+    if (userId) {
+        try {
+            if (typeof userId !== 'string' || !mongoose.Types.ObjectId.isValid(userId)) {
+                throw new Error('Invalid userId: must be a valid ObjectId string');
+            }
+
+            const joinedGroups = await UserGroup.find({ user_id: userId }).distinct('group_id');
+
+            const result = await Group.aggregate([
+                {
+                    $match: {
+                        _id: { $nin: joinedGroups },
+                        group_state: "Public",
+                        del_flag: 0
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'created_by',
+                        foreignField: '_id',
+                        as: 'createdByDetails'
+                    }
+                },
+                {
+                    $unwind: '$createdByDetails'
+                },
+                {
+                    $lookup: {
+                        from: 'user_groups', // Adjust to your actual UserGroup collection name
+                        localField: '_id',
+                        foreignField: 'group_id',
+                        as: 'members'
+                    }
+                },
+                {
+                    // Filter out duplicates by using Set to get unique member IDs
+                    $addFields: {
+                        uniqueMembers: { $setUnion: '$members.user_id' }
+                    }
+                },
+                {
+                    // Calculate member count based on unique members
+                    $addFields: {
+                        memberCount: { $size: '$uniqueMembers' }
+                    }
+                },
+                {
+                    $project: {
+                        group_id: '$_id',
+                        group_name: '$name',
+                        group_type: '$group_type',
+                        group_state: '$group_state',
+                        group_avatar: '$group_avatar',
+                        description: '$description',
+                        tags: '$tags',
+                        created_by: '$createdByDetails.name',
+                        del_flag: '$del_flag',
+                        createdAt: '$createdAt',
+                        updatedAt: '$updatedAt',
+                        memberCount: 1 
+                    }
+                }
+            ]);
+
+
+
+            res.status(200).json({ message: "Successfully fetched unjoined groups", groups: result });
+        } catch (err) {
+            next(err);
+        }
+    } else {
+        return res.status(400).json({ message: "Failed to fetch unjoined groups" });
+    }
 })
