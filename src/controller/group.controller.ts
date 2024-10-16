@@ -10,6 +10,7 @@ import User, { UserDoc } from "../model/user.model";
 import { sendEmail } from "../utils/notification.utils";
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
+import GroupRequest from "../model/group_requests.model";
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
@@ -433,6 +434,33 @@ export const updateGroup = asyncWrapper(async (req: Request, res: Response, next
     res.status(200).json({
         status: true,
         message: "group successfully updated"
+    })
+
+})
+
+export const RequestToJoinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    const existingUser = await User.findOne({ _id: req?.user?._id });
+    if (!existingUser) {
+        return res.status(400).json({ message: "User not found" });
+    }
+
+    const existingGroup = await Group.findOne({ group_id: req.body.group_id }).populate('created_by');
+    if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
+
+    const createdBy = await existingGroup.populate('created_by') as UserDoc;
+    const newRequest = await GroupRequest.create(req.body)
+    if (!newRequest) return res.status(500).json({ errors: "Something went wrong" })
+
+    sendEmail(`${createdBy.email}`, `${existingGroup?.name} - New Join Request`, `${existingUser?.email} has requested to join your group. Visit the platform to confirm`)
+
+    res.status(201).json({
+        status: true,
+        message: "New request sent successfully"
     })
 
 })

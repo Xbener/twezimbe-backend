@@ -22,10 +22,10 @@ const RoleSchema = new Schema({
         type: ObjectId,
         ref: 'User'
     },
-    del_flag: { type: Number, default: 0 },
+    del_flag: { type: Number, default: 0 }, 
 }, {
     timestamps: true
 });
 
-const Group = model("Group", RoleSchema);
+const Group = model("GroupRequest", RoleSchema);
 export default Group;
