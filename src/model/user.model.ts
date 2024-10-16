@@ -1,5 +1,7 @@
 import { Document, model, Schema } from "mongoose";
 
+const default_profile_pic = "https://res.cloudinary.com/djehh7gum/image/upload/v1729056803/k6eviapycaxss3e12v5e.png"
+
 export interface UserDoc extends Document {
     googleId: string;
     facebookId: string;
@@ -25,6 +27,8 @@ export interface UserDoc extends Document {
     otp: number;
     otpExpiryTime: Date;
     _doc: UserDoc;
+    profile_pic: string;
+
 };
 
 const UserSchema = new Schema({
@@ -37,6 +41,7 @@ const UserSchema = new Schema({
     password: { type: String, required: false },
     birthday: { type: Date },
     home_address: { type: String },
+    profile_pic: { type: String, required: true, default: default_profile_pic },
     office_address: { type: String },
     primary_interest: { type: String },
     current_challenges: { type: String },

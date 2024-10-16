@@ -26,6 +26,9 @@ const StartServer = async () => {
     await Database();
     await ExpressServer(app);
 
+    app.use(express.json({ limit: '5mb' }));
+    app.use(express.urlencoded({ limit: '5mb', extended: true }));
+
     app.use(session({
         resave: false, saveUninitialized: true, secret: process.env.SESSION_SECRET || 'my-secret'
     }))
@@ -52,8 +55,8 @@ const StartServer = async () => {
         });
         res.redirect(`${process.env.FRONTEND_URL}?token=${token}&user=${req.user}`)
     })
-    
-    
+
+
     app.get('/api/v1/auth/facebook', passport.authenticate("facebook", { scope: ['public_profile', 'email'] }))
     app.get('/api/v1/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/api/v1/auth/facebook' }), async (req, res, next) => {
 

@@ -18,6 +18,8 @@ const facebookStrategy = new FacebookStrategy({
     enableProof: true
     // state: true
 }, async function (accessToken: string, refreshToken: string, profile: any, cb: (n: null, p: any) => void) {
+
+    console.log('facebook profile', profile)
     const existingUser = await UserModel.findOne({ email: profile._json.email });
     if (existingUser) {
         return cb(null, existingUser)
@@ -39,7 +41,8 @@ const facebookStrategy = new FacebookStrategy({
         otpExpiryTime: expiryDate,
         phone: "",
         salt: salt,
-        password: ""
+        password: "",
+        profile_picture: profile.photos[0]!.value
     });
 
     var emailMessageBody = '';
@@ -71,6 +74,8 @@ const googleStrategy = new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
 }, async function (accessToken, refreshToken, profile, cb) {
+    console.log('google profile', profile)
+
     const existingUser = await UserModel.findOne({ email: profile._json.email });
     if (existingUser) {
         return cb(null, existingUser)
@@ -91,7 +96,8 @@ const googleStrategy = new GoogleStrategy({
         otpExpiryTime: expiryDate,
         phone: "",
         salt: salt,
-        password: ""
+        password: "",
+        profile_picture: profile._json.picture
     });
 
     var emailMessageBody = '';

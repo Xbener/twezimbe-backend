@@ -6,7 +6,8 @@ import UserModel from "../model/user.model";
 import RoleUser from "../model/user_role";
 import { GenerateOTP, sendEmail } from "../utils/notification.utils";
 import { GeneratePassword, GenerateSalt, GenerateToken, ValidatePassword, ValidateToken, isTokenValid } from "../utils/password.utils";
-
+import { v2 as cloudinary } from 'cloudinary'
+import fs from 'fs'
 export const signUp = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
     const existingUser = await UserModel.findOne({ email: req.body.email });
@@ -220,7 +221,8 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
 
     await UserModel.findByIdAndUpdate(req.user?._id, {
         $set: {
-            ...req.body
+            ...req.body,
+            profile_pic: ''
         },
         new: true
     });
@@ -241,4 +243,45 @@ export const verifyToken = asyncWrapper(async (req: Request, res: Response, next
         return res.status(400).json({ message: "Access denied" });
     }
     res.status(200).json({ message: "Token is valid" });
+});
+
+
+
+export const uploadProfilePicture = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+
+    const uploadResult = await cloudinary.uploader.upload(req.file.path);
+    console.log(req?.user)
+
+    const userId = req?.user?._id;
+    const updatedUser = await UserModel.findByIdAndUpdate(userId, {
+        $set: {
+            profile_pic: uploadResult.secure_url
+        }
+    });
+
+    if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    fs.unlink(req.file.path, (err) => {
+        if (err) {
+            console.error('Error deleting file:', err);
+        }
+    });
+
+    res.status(200).json({
+        message: 'Profile picture uploaded successfully',
+        profilePicUrl: uploadResult.secure_url,
+        user: updatedUser,
+        status: true
+    });
 });

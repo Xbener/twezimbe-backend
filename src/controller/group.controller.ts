@@ -8,6 +8,7 @@ import RoleUser from "../model/user_role";
 import mongoose from "mongoose";
 import User, { UserDoc } from "../model/user.model";
 import { sendEmail } from "../utils/notification.utils";
+import { v2 as cloudinary } from 'cloudinary'
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
