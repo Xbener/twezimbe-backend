@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import User, { UserDoc } from "../model/user.model";
 import { sendEmail } from "../utils/notification.utils";
 import { v2 as cloudinary } from 'cloudinary'
+import fs from 'fs'
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
@@ -134,7 +135,7 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         group_name: '$name',
                         group_type: '$group_type',
                         group_state: '$group_state',
-                        group_avatar: '$group_avatar',
+                        group_picture: '$group_picture',
                         description: '$description',
                         tags: '$tags',
                         created_by: '$createdByDetails.name',
@@ -211,7 +212,7 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
                         group_name: { $first: '$groupDetails.name' },
                         group_type: { $first: '$groupDetails.group_type' },
                         group_state: { $first: '$groupDetails.group_state' },
-                        group_avatar: { $first: '$groupDetails.group_avatar' },
+                        group_picture: { $first: '$groupDetails.group_picture' },
                         description: { $first: '$groupDetails.description' },
                         tags: { $first: '$groupDetails.tags' },
                         created_by: { $first: '$groupDetails.created_by' },
@@ -284,14 +285,14 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 group_name: { $first: '$name' },
                 group_type: { $first: '$group_type' },
                 group_state: { $first: '$group_state' },
-                group_avatar: { $first: '$group_avatar' },
+                group_picture: { $first: '$group_picture' },
                 description: { $first: '$description' },
                 tags: { $first: '$tags' },
                 created_by: { $first: '$created_by' },
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
                 updatedAt: { $first: '$updatedAt' },
-                members: { $addToSet: '$memberDetails' } // Collecting unique member details
+                members: { $addToSet: '$memberDetails' }
             }
         }
     ]);
@@ -316,6 +317,7 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
     if (!isTokenValid) {
         return res.status(400).json({ message: "Access denied" });
     }
+
 
     const existingGroup = await UserGroup.findOne({ user_id: req.body.user_id, group_id: req.body.group_id });
 
@@ -342,7 +344,7 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
 
             const group = await Group.findById(req.body.group_id).populate('created_by');
 
-            const createdByUser = group?.created_by as UserDoc; 
+            const createdByUser = group?.created_by as UserDoc;
 
             if (createdByUser && createdByUser.email) {
                 sendEmail(createdByUser.email, "Twezimbe Groups - New Member", `${group?.name} has a new member!`);
@@ -354,3 +356,49 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
         }
     }
 });
+
+
+export const updateGroupPicture = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const userId = req?.user?._id;
+    const groupId = req.body.groupId
+
+    const existingUser = await User.findOne({ _id: userId });
+    if (!existingUser) {
+        return res.status(400).json({ message: "User not found" });
+    }
+
+    const existingGroup = await UserGroup.findOne({ user_id: userId, group_id: groupId });
+    if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
+
+
+    const uploadResult = await cloudinary.uploader.upload(req.file.path);
+    const updatedGroup = await Group.findByIdAndUpdate(groupId, {
+        group_picture: uploadResult.secure_url
+    });
+
+    if (!updatedGroup) {
+        return res.status(404).json({ message: 'Group not found' });
+    }
+
+    fs.unlink(req.file.path, (err) => {
+        if (err) {
+            console.error('Error deleting file:', err);
+        }
+    });
+
+    res.status(200).json({
+        message: 'Group Profile picture uploaded successfully',
+        profilePicUrl: uploadResult.secure_url,
+        group: updatedGroup,
+        status: true
+    });
+})

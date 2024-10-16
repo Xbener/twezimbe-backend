@@ -1,6 +1,8 @@
 import { ObjectId } from "mongodb";
 import { model, Schema } from "mongoose";
 
+const default_group_pic = 'https://res.cloudinary.com/djehh7gum/image/upload/v1729070790/ura0gnomuhpti7sbi79r.png'
+
 const RoleSchema = new Schema({
     name: { type: String, required: true },
     group_type: { type: String, required: true, default: 'Social' },
@@ -10,10 +12,10 @@ const RoleSchema = new Schema({
         enum: ['Public', 'Private', 'Invite-Only'],
         default: 'Public'
     },
-    group_avatar: { type: String, required: true, default: 'default' },
     description: { type: String },
     tags: { type: String },
     invite_link: { type: String, required: false },
+    group_picture: { type: String, required: true, default: default_group_pic },
     created_by: {
         type: ObjectId,
         ref: 'User'
