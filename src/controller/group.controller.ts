@@ -10,7 +10,6 @@ import User, { UserDoc } from "../model/user.model";
 import { sendEmail } from "../utils/notification.utils";
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
-import GroupRequest from "../model/group_requests.model";
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
@@ -139,8 +138,8 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         group_picture: '$group_picture',
                         invite_link: { $first: "$invite_link" },
                         description: '$description',
-                        upgraded: {$first: "$upgraded"},
-                        isSacco: {$first: "$isSacco"},
+                        upgraded: { $first: "$upgraded" },
+                        isSacco: { $first: "$isSacco" },
                         tags: '$tags',
                         created_by: '$createdByDetails.name',
                         del_flag: '$del_flag',
@@ -220,8 +219,8 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
                         description: { $first: '$groupDetails.description' },
                         invite_link: { $first: "$invite_link" },
                         tags: { $first: '$groupDetails.tags' },
-                        upgraded: {$first: "$upgraded"},
-                        isSacco: {$first: "$isSacco"},
+                        upgraded: { $first: "$upgraded" },
+                        isSacco: { $first: "$isSacco" },
                         created_by: { $first: '$groupDetails.created_by' },
                         del_flag: { $first: '$groupDetails.del_flag' },
                         createdAt: { $first: '$groupDetails.createdAt' },
@@ -296,8 +295,8 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 description: { $first: '$description' },
                 tags: { $first: '$tags' },
                 invite_link: { $first: "$invite_link" },
-                upgraded: {$first: "$upgraded"},
-                isSacco: {$first: "$isSacco"},
+                upgraded: { $first: "$upgraded" },
+                isSacco: { $first: "$isSacco" },
                 created_by: { $first: '$created_by' },
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
@@ -438,29 +437,29 @@ export const updateGroup = asyncWrapper(async (req: Request, res: Response, next
 
 })
 
-export const RequestToJoinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
-    const isTokenValid = await ValidateToken(req);
-    if (!isTokenValid) {
-        return res.status(400).json({ message: "Access denied" });
-    };
+// export const RequestToJoinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+//     const isTokenValid = await ValidateToken(req);
+//     if (!isTokenValid) {
+//         return res.status(400).json({ message: "Access denied" });
+//     };
 
-    const existingUser = await User.findOne({ _id: req?.user?._id });
-    if (!existingUser) {
-        return res.status(400).json({ message: "User not found" });
-    }
+//     const existingUser = await User.findOne({ _id: req?.user?._id });
+//     if (!existingUser) {
+//         return res.status(400).json({ message: "User not found" });
+//     }
 
-    const existingGroup = await Group.findOne({ group_id: req.body.group_id }).populate('created_by');
-    if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
+//     const existingGroup = await Group.findOne({ group_id: req.body.group_id }).populate('created_by');
+//     if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
 
-    const createdBy = await existingGroup.populate('created_by') as UserDoc;
-    const newRequest = await GroupRequest.create(req.body)
-    if (!newRequest) return res.status(500).json({ errors: "Something went wrong" })
+//     const createdBy = await existingGroup.populate('created_by') as UserDoc;
+//     const newRequest = await GroupRequest.create(req.body)
+//     if (!newRequest) return res.status(500).json({ errors: "Something went wrong" })
 
-    sendEmail(`${createdBy.email}`, `${existingGroup?.name} - New Join Request`, `${existingUser?.email} has requested to join your group. Visit the platform to confirm`)
+//     sendEmail(`${createdBy.email}`, `${existingGroup?.name} - New Join Request`, `${existingUser?.email} has requested to join your group. Visit the platform to confirm`)
 
-    res.status(201).json({
-        status: true,
-        message: "New request sent successfully"
-    })
+//     res.status(201).json({
+//         status: true,
+//         message: "New request sent successfully"
+//     })
 
-})
+// })

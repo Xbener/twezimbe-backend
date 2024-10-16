@@ -27,5 +27,5 @@ const RoleSchema = new Schema({
     timestamps: true
 });
 
-const Group = model("GroupRequest", RoleSchema);
+const Group = model("Group", RoleSchema);
 export default Group;
