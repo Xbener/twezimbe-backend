@@ -136,6 +136,7 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         group_type: '$group_type',
                         group_state: '$group_state',
                         group_picture: '$group_picture',
+                        invite_link: { $first: "$invite_link" },
                         description: '$description',
                         tags: '$tags',
                         created_by: '$createdByDetails.name',
@@ -214,6 +215,7 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
                         group_state: { $first: '$groupDetails.group_state' },
                         group_picture: { $first: '$groupDetails.group_picture' },
                         description: { $first: '$groupDetails.description' },
+                        invite_link: { $first: "$invite_link" },
                         tags: { $first: '$groupDetails.tags' },
                         created_by: { $first: '$groupDetails.created_by' },
                         del_flag: { $first: '$groupDetails.del_flag' },
@@ -288,6 +290,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 group_picture: { $first: '$group_picture' },
                 description: { $first: '$description' },
                 tags: { $first: '$tags' },
+                invite_link: { $first: "$invite_link" },
                 created_by: { $first: '$created_by' },
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
@@ -401,4 +404,29 @@ export const updateGroupPicture = asyncWrapper(async (req: Request, res: Respons
         group: updatedGroup,
         status: true
     });
+})
+
+
+export const updateGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    const existingGroup = await UserGroup.findOne({ user_id: req?.user?._id, group_id: req.body.group_id });
+    if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
+
+    const updatedGroup = await Group.findByIdAndUpdate(req.body.group_id, {
+        $set: {
+            ...req.body
+        }
+    })
+
+    if (!updatedGroup) return res.status(500).json({ errors: "Something went wrong. Please try again" })
+
+    res.status(200).json({
+        status: true,
+        message: "group successfully updated"
+    })
+
 })
