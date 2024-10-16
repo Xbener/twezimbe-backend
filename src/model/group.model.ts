@@ -17,6 +17,7 @@ const RoleSchema = new Schema({
     invite_link: { type: String, required: false },
     group_picture: { type: String, required: true, default: default_group_pic },
     upgraded: { type: Boolean, default: false, required: true },
+    isSacco: { type: Boolean, default: false, required: true },
     created_by: {
         type: ObjectId,
         ref: 'User'
