@@ -534,3 +534,69 @@ export const declineRequest = asyncWrapper(async (req: Request, res: Response, n
     })
 
 })
+
+export const acceptRequest = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    }
+
+    const { userId, groupId, requestId } = req.body;
+
+    console.log(req.body)
+
+    const userExists = await User.findOne({ _id: userId });
+    if (!userExists) return res.status(404).json({ errors: "User not found" });
+
+    const groupExists = await Group.findOne({ _id: groupId }).populate('created_by');
+    if (!groupExists) return res.status(404).json({ errors: "Group was not found" });
+
+    const requestExists = await GroupRequest.findOne({ _id: requestId });
+    if (!requestExists) return res.status(404).json({ errors: "Request was not found" });
+
+    // Check for existing membership
+    const existingGroup = await UserGroup.findOne({ user_id: userId, group_id: groupId });
+    if (existingGroup) {
+        return res.status(400).json({ message: "User is already a member!" });
+    }
+
+    const role = await Role.findOne({ role_name: "GroupUser" });
+    const createdByUser = groupExists.created_by as UserDoc;
+
+    // Check member limit
+    if (!groupExists.upgraded && groupExists.memberCount >= 100) {
+        sendEmail(createdByUser.email, `Upgrade ${groupExists.name}`, `Upgrade your Twezimbe Groups plan to have unlimited members in your group`);
+        return res.status(403).json({
+            status: false,
+            errors: "Unable to accept request. Member limit reached."
+        });
+    }
+
+    // Create the new membership
+    const newJoinGroup = await UserGroup.create({
+        user_id: userId,
+        group_id: groupId,
+        role_id: role?._id
+    });
+
+    if (newJoinGroup) {
+        // Create role if not exists
+        const existingRole = await RoleUser.findOne({ user_id: userId, role_id: role?._id });
+        if (!existingRole) {
+            await RoleUser.create({
+                user_id: userId,
+                role_id: role?._id
+            });
+        }
+
+        // Notify group creator
+        sendEmail(`${userExists.email}`, "Twezimbe Groups - Membership approved", `admins have approved your request to join ${groupExists.name}`);
+
+        // Update member count
+        await Group.findByIdAndUpdate(groupId, { $inc: { memberCount: 1 } });
+
+        await GroupRequest.findByIdAndDelete(requestId);
+
+        res.status(201).json({ status: true, message: "Request accepted and user added to the group", group: newJoinGroup });
+    }
+});
