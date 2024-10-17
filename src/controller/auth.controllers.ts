@@ -37,7 +37,7 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
     } else if (recordedUser.role === 'Admin') {
         emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/admin/auth/verifyotp?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
     } else {
-        emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/verifyotp?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
+        emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/validateOTP?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
     }
 
     // Send email
@@ -138,7 +138,7 @@ export const regenerateOTP = asyncWrapper(async (req: Request, res: Response, ne
     await foundUser.save();
 
     // Send email
-    await sendEmail(foundUser.email, "Verify your account", `Hello ${foundUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/verifyotp?id=${foundUser._id}\n\nBest regards,\n\nTwezimbe`);
+    await sendEmail(foundUser.email, "Verify your account", `Hello ${foundUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/validateOTP?id=${foundUser._id}\n\nBest regards,\n\nTwezimbe`);
 
     // Send response
     res.status(200).json({ message: "OTP resent!" });
