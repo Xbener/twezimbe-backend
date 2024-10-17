@@ -512,7 +512,7 @@ export const declineRequest = asyncWrapper(async (req: Request, res: Response, n
         return res.status(400).json({ message: "Access denied" });
     };
 
-    const { userId, groupId, requestId } = req.body
+    const { userId, groupId, requestId } = req.query
 
     const userExists = await User.findOne({ _id: userId })
     if (!userExists) return res.status(404).json({ errors: "User not found" })
