@@ -1,5 +1,5 @@
 import express from "express";
-import { addGroup, getPublicGroups, getJoinedGroupList, getGroupById, joinGroup, updateGroupPicture, updateGroup, RequestToJoinGroup, getGroupRequests, declineRequest, acceptRequest } from "../controller/group.controller";
+import { addGroup, getPublicGroups, getJoinedGroupList, getGroupById, joinGroup, updateGroupPicture, updateGroup, RequestToJoinGroup, getGroupRequests, declineRequest, acceptRequest, upgradePlan, captureWebHook } from "../controller/group.controller";
 import { upload } from "../utils/multer";
 import { roleUpdate } from "../controller";
 const roleRouter = express.Router();
@@ -17,4 +17,11 @@ roleRouter.post('/requests', RequestToJoinGroup)
 roleRouter.get('/requests/:groupId', getGroupRequests)
 roleRouter.delete('/requests', declineRequest)
 roleRouter.put('/requests', acceptRequest)
+
+
+// payments
+
+roleRouter.post('/create-checkout-session', upgradePlan)
+roleRouter.post('/webhook', captureWebHook)
 export default roleRouter;
+

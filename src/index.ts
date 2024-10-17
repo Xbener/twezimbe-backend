@@ -7,6 +7,9 @@ import passport from 'passport';
 import './services/passport.strategies'
 import session from 'express-session'
 import { GenerateToken } from './utils/password.utils';
+import { config } from 'dotenv';
+config()
+export const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const cors = require("cors");
 
 cloudinary.config({
@@ -74,7 +77,7 @@ const StartServer = async () => {
     })
 
 
-    app.listen(process.env.PORT || 3002, () => console.log('Server is running on port 3001'));
+    app.listen(process.env.PORT || 3001, () => console.log('Server is running on port 3001'));
 };
 
 StartServer();

@@ -11,6 +11,7 @@ import { sendEmail } from "../utils/notification.utils";
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
 import GroupRequest from "../model/group_requests.model";
+import { stripe } from "..";
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
@@ -600,3 +601,39 @@ export const acceptRequest = asyncWrapper(async (req: Request, res: Response, ne
         res.status(201).json({ status: true, message: "Request accepted and user added to the group", group: newJoinGroup });
     }
 });
+
+
+
+export const upgradePlan = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const { groupId } = req.body;
+
+    const groupExists = await Group.findOne({ _id: groupId }).populate('created_by');
+    if (!groupExists) return res.status(404).json({ errors: "Group was not found" });
+
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+            price: "price_1QArpBBtQjOArbSaV1KfrgCF",
+            quantity: 1
+        }],
+        mode: 'payment',
+        success_url: `${process.env.FRONTEND_URL}/payment_success?groupId=${groupId}`,
+        cancel_url: `${process.env.FRONTEND_URL}`
+    }).catch((err: any) => console.log('error creating checkout session:', err.message))
+    res.status(201).json({
+        id: session.id,
+        url: session.url
+    })
+})
+
+
+export const captureWebHook = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const event = req.body;
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const groupId = session.success_url.split('?groupId=')[1];
+
+        const updatedGroup = await Group.findByIdAndUpdate(groupId, { $set: { upgraded: true } })
+    }
+    res.status(200).end();
+})
