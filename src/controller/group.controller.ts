@@ -135,8 +135,8 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         group_picture: '$group_picture',
                         invite_link: '$invite_link', // Access directly
                         description: '$description',
-                        upgraded: { $first: "$upgraded" },
-                        isSacco: { $first: "$isSacco" },
+                        upgraded: '$upgraded', // Access directly
+                        isSacco: '$isSacco', // Access directly
                         tags: '$tags',
                         created_by: '$createdByDetails.name',
                         del_flag: '$del_flag',
@@ -146,8 +146,6 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                     }
                 }
             ]);
-
-
 
             res.status(200).json({ message: "Successfully fetched unjoined groups", groups: result });
         } catch (err) {
@@ -266,7 +264,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 foreignField: 'group_id',
                 as: 'members'
             }
-        },{
+        }, {
             $lookup: {
                 from: 'users', // Assuming this is the correct collection name for user groups
                 localField: 'created_by',
