@@ -94,6 +94,7 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                 {
                     $match: {
                         _id: { $nin: joinedGroups },
+                        group_state: "Public",
                         del_flag: 0
                     }
                 },
@@ -336,7 +337,16 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
         return res.status(400).json({ message: "You have already joined!" });
     } else {
         const role = await Role.findOne({ role_name: "GroupUser" });
+        const group = await Group.findById(req.body.group_id).populate('created_by');
+        const createdByUser = group?.created_by as UserDoc;
 
+        if (!group?.upgraded && group?.memberCount! >= 100) {
+            sendEmail(createdByUser.email, `Upgrade ${group?.name}`, `Upgrade your Twezimbe Groups plan to have unlimited members in your group`);
+            return res.status(403).json({
+                status: false,
+                errors: "Unable to Join Group. Member limit reached. Please contact the group admins"
+            })
+        }
         const newJoinGroup = await UserGroup.create({
             user_id: req.body.user_id,
             group_id: req.body.group_id,
@@ -353,9 +363,7 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
                 });
             }
 
-            const group = await Group.findById(req.body.group_id).populate('created_by');
 
-            const createdByUser = group?.created_by as UserDoc;
 
             if (createdByUser && createdByUser.email) {
                 sendEmail(createdByUser.email, "Twezimbe Groups - New Member", `${group?.name} has a new member!`);
