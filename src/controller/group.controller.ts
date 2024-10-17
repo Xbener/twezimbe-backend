@@ -636,6 +636,6 @@ export const captureWebHook = asyncWrapper(async (req: Request, res: Response, n
         const updatedGroup = await Group.findByIdAndUpdate(groupId, { $set: { upgraded: true } }).populate('created_by')
         const createdBy = updatedGroup?.created_by as UserDoc
         sendEmail(createdBy.email, `Upgraded ${updatedGroup?.name} successfully`, `Hello! Your payment to upgrade to Twezimbe Premium was received. You can now enjoy all premium features!`);
+        res.status(200).json({ url: session.success_url });
     }
-    res.status(200).end();
 })
