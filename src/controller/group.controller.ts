@@ -94,7 +94,6 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                 {
                     $match: {
                         _id: { $nin: joinedGroups },
-                        group_state: "Public",
                         del_flag: 0
                     }
                 },
@@ -111,20 +110,18 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                 },
                 {
                     $lookup: {
-                        from: 'user_groups', // Adjust to your actual UserGroup collection name
+                        from: 'user_groups',
                         localField: '_id',
                         foreignField: 'group_id',
                         as: 'members'
                     }
                 },
                 {
-                    // Filter out duplicates by using Set to get unique member IDs
                     $addFields: {
                         uniqueMembers: { $setUnion: '$members.user_id' }
                     }
                 },
                 {
-                    // Calculate member count based on unique members
                     $addFields: {
                         memberCount: { $size: '$uniqueMembers' }
                     }
@@ -136,7 +133,7 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         group_type: '$group_type',
                         group_state: '$group_state',
                         group_picture: '$group_picture',
-                        invite_link: { $first: "$invite_link" },
+                        invite_link: '$invite_link', // Access directly
                         description: '$description',
                         upgraded: { $first: "$upgraded" },
                         isSacco: { $first: "$isSacco" },
@@ -268,6 +265,13 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 localField: '_id',
                 foreignField: 'group_id',
                 as: 'members'
+            }
+        },{
+            $lookup: {
+                from: 'users', // Assuming this is the correct collection name for user groups
+                localField: 'created_by',
+                foreignField: '_id',
+                as: 'created_by'
             }
         },
         {
