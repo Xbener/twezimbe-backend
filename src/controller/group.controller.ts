@@ -617,7 +617,7 @@ export const upgradePlan = asyncWrapper(async (req: Request, res: Response, next
             quantity: 1
         }],
         mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL}/payment_success?groupId=${groupId}`,
+        success_url: `${process.env.FRONTEND_URL}/payment_success?groupId=${groupId}&success=true`,
         cancel_url: `${process.env.FRONTEND_URL}`
     }).catch((err: any) => console.log('error creating checkout session:', err.message))
     res.status(201).json({
@@ -631,7 +631,8 @@ export const captureWebHook = asyncWrapper(async (req: Request, res: Response, n
     const event = req.body;
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-        const groupId = session.success_url.split('?groupId=')[1];
+        const groupIdParam = session.success_url.split('?')[1];
+        const groupId = groupIdParam.split('&').find((param: string) => param.startsWith('groupId=')).split('=')[1];
 
         const updatedGroup = await Group.findByIdAndUpdate(groupId, { $set: { upgraded: true } })
     }
