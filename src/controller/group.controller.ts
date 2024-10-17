@@ -370,7 +370,7 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
             } else {
                 console.error('Could not find email for group owner');
             }
-
+            await Group.findByIdAndUpdate(group?._id, { $inc: { memberCount: 1 } });
             res.status(201).json({ message: "New role added successfully", group: newJoinGroup });
         }
     }
@@ -431,12 +431,18 @@ export const updateGroup = asyncWrapper(async (req: Request, res: Response, next
 
     const existingGroup = await UserGroup.findOne({ user_id: req?.user?._id, group_id: req.body.group_id });
     if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
+    const group = await Group.findOne({ _id: req.body.group_id })
 
-    const updatedGroup = await Group.findByIdAndUpdate(req.body.group_id, {
-        $set: {
-            ...req.body
-        }
-    })
+    console.log(req.body)
+    if (req.body.isSacco && group?.memberCount! < 5){
+        return res.status(403).json({errors:"Can't Transition to SACCO. You need at least 5 members of the group."})
+    }
+
+        const updatedGroup = await Group.findByIdAndUpdate(req.body.group_id, {
+            $set: {
+                ...req.body
+            }
+        })
 
     if (!updatedGroup) return res.status(500).json({ errors: "Something went wrong. Please try again" })
 
