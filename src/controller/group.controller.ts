@@ -500,6 +500,37 @@ export const getGroupRequests = asyncWrapper(async (req: Request, res: Response,
         groupRequests: groupRequests.map(request => ({
             user: request.userId,
             group: request.groupId,
+            _id: request._id
         }))
     })
+})
+
+
+export const declineRequest = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    const { userId, groupId, requestId } = req.body
+
+    const userExists = await User.findOne({ _id: userId })
+    if (!userExists) return res.status(404).json({ errors: "User not found" })
+
+    const groupExists = await Group.findOne({ _id: groupId })
+    if (!groupExists) return res.status(404).json({ errors: "Group was not found" })
+
+    const requestExists = await GroupRequest.findOne({ _id: requestId })
+    if (!requestExists) return res.status(404).json({ errors: "Request was not found" })
+
+    const deletedRequest = await GroupRequest.findByIdAndDelete(requestId)
+    if (!deletedRequest) return res.status(500).json({ errors: "Something went wrong when deleting request. Please try again" })
+
+
+    sendEmail(`${userExists.email}`, "Request Declined", `Your request to join ${groupExists.name} was declined by admins`)
+    res.status(200).json({
+        status: true,
+        message: "Request was declined successfully"
+    })
+
 })
