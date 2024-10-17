@@ -10,6 +10,7 @@ import User, { UserDoc } from "../model/user.model";
 import { sendEmail } from "../utils/notification.utils";
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
+import GroupRequest from "../model/group_requests.model";
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
@@ -94,7 +95,7 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                 {
                     $match: {
                         _id: { $nin: joinedGroups },
-                        group_state: "Public",
+                        group_state: { $ne: "Invite-Only" },
                         del_flag: 0
                     }
                 },
@@ -434,15 +435,15 @@ export const updateGroup = asyncWrapper(async (req: Request, res: Response, next
     const group = await Group.findOne({ _id: req.body.group_id })
 
     console.log(req.body)
-    if (req.body.isSacco && group?.memberCount! < 5){
-        return res.status(403).json({errors:"Can't Transition to SACCO. You need at least 5 members of the group."})
+    if (req.body.isSacco && group?.memberCount! < 5) {
+        return res.status(403).json({ errors: "Can't Transition to SACCO. You need at least 5 members of the group." })
     }
 
-        const updatedGroup = await Group.findByIdAndUpdate(req.body.group_id, {
-            $set: {
-                ...req.body
-            }
-        })
+    const updatedGroup = await Group.findByIdAndUpdate(req.body.group_id, {
+        $set: {
+            ...req.body
+        }
+    })
 
     if (!updatedGroup) return res.status(500).json({ errors: "Something went wrong. Please try again" })
 
@@ -453,29 +454,52 @@ export const updateGroup = asyncWrapper(async (req: Request, res: Response, next
 
 })
 
-// export const RequestToJoinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
-//     const isTokenValid = await ValidateToken(req);
-//     if (!isTokenValid) {
-//         return res.status(400).json({ message: "Access denied" });
-//     };
+export const RequestToJoinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
 
-//     const existingUser = await User.findOne({ _id: req?.user?._id });
-//     if (!existingUser) {
-//         return res.status(400).json({ message: "User not found" });
-//     }
+    const existingUser = await User.findOne({ _id: req?.user?._id });
+    if (!existingUser) {
+        return res.status(400).json({ message: "User not found" });
+    }
 
-//     const existingGroup = await Group.findOne({ group_id: req.body.group_id }).populate('created_by');
-//     if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
+    const existingGroup = await Group.findOne({ _id: req.body.groupId }).populate('created_by');
+    if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
 
-//     const createdBy = await existingGroup.populate('created_by') as UserDoc;
-//     const newRequest = await GroupRequest.create(req.body)
-//     if (!newRequest) return res.status(500).json({ errors: "Something went wrong" })
+    const createdBy = await existingGroup.created_by as UserDoc;
 
-//     sendEmail(`${createdBy.email}`, `${existingGroup?.name} - New Join Request`, `${existingUser?.email} has requested to join your group. Visit the platform to confirm`)
+    // check if request does not exists already
+    const request_exists = await GroupRequest.findOne(req.body)
+    if (request_exists) return res.status(409).json({ errors: "Request already sent. Please wait for admin approval" })
+    const newRequest = await GroupRequest.create(req.body)
+    if (!newRequest) return res.status(500).json({ errors: "Something went wrong" })
 
-//     res.status(201).json({
-//         status: true,
-//         message: "New request sent successfully"
-//     })
+    sendEmail(`${createdBy.email}`, `${existingGroup?.name} - New Join Request`, `${existingUser?.email} has requested to join your group. Visit the platform to confirm`)
 
-// })
+    res.status(201).json({
+        status: true,
+        message: "New request sent successfully"
+    })
+
+})
+
+
+export const getGroupRequests = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    const groupRequests = await GroupRequest.find({ groupId: req.params.groupId }).populate('userId').populate('groupId')
+
+    res.status(200).json({
+        status: true,
+        message: "Group Requests found",
+        groupRequests: groupRequests.map(request => ({
+            user: request.userId,
+            group: request.groupId,
+        }))
+    })
+})

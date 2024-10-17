@@ -3,8 +3,8 @@ import { model, Schema } from "mongoose";
 
 
 const GroupRequestSchema = new Schema({
-    userId: { type: ObjectId, required: true },
-    groupId: { type: ObjectId, required: true }
+    userId: { type: ObjectId, ref: "User", required: true },
+    groupId: { type: ObjectId, ref: "Group", required: true }
 }, {
     timestamps: true
 });
