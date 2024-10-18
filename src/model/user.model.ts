@@ -59,6 +59,7 @@ export interface UserDoc extends Document {
         answer: string;
     }[];
     two_factor_secret: string;
+    is_complete: boolean;
 }
 
 const UserSchema = new Schema<UserDoc>({
@@ -159,6 +160,9 @@ const UserSchema = new Schema<UserDoc>({
     ],
     two_factor_secret: {
         type: String, required: true
+    },
+    is_complete: {
+        type: Boolean, required: true, default: false
     }
 }, {
     toJSON: {

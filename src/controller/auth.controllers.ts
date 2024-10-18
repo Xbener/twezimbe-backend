@@ -240,7 +240,8 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
     await UserModel.findByIdAndUpdate(req.user?._id, {
         $set: {
             ...req.body,
-            profileID
+            profileID,
+            is_complete:true
         },
         new: true
     });
