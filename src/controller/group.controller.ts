@@ -386,6 +386,7 @@ export const getGroupMembers = asyncWrapper(async (req: Request, res: Response) 
             firstName: user.firstName,
             lastName: user.lastName,
             profile_pic: user.profile_pic,
+            email: user.email,
             role: role?.role_name,   // e.g., GroupManager, GroupModerator, GroupUser
             groupId: groupData._id,      // Group ID
             groupName: groupData.name,   // Group name (if available)
