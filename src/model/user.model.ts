@@ -54,6 +54,10 @@ export interface UserDoc extends Document {
     salt: string;
     _doc: UserDoc;
     role: "User" | "Manager" | "Admin";
+    securityQuestions?: {
+        question: string;
+        answer: string;
+    }[]
 }
 
 const UserSchema = new Schema<UserDoc>({
@@ -146,6 +150,12 @@ const UserSchema = new Schema<UserDoc>({
         enum: ["User", "Manager", "Admin"],
         default: "User",
     },
+    securityQuestions: [
+        {
+            question: String,
+            answer: String
+        }
+    ]
 }, {
     toJSON: {
         transform: (doc, ret) => {
