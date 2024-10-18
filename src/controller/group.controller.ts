@@ -486,6 +486,36 @@ export const leaveGroup = asyncWrapper(async (req: Request, res: Response) => {
     })
 })
 
+
+export const deleteGroup = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    const { groupId } = req.params
+    const userId = req?.user?._id!
+
+    const userExists = await User.findOne({ _id: userId })
+    if (!userExists) return res.status(404).json({ errors: "User not found" })
+
+    const groupExists = await Group.findOne({ _id: groupId }).populate('created_by')
+    if (!groupExists) return res.status(404).json({ errors: "Group was not found" })
+
+    const created_by = groupExists.created_by as UserDoc
+    if (created_by._id != userId) return res.status(409).json({ status: false, errors: "You Don't have privilege to delete this group" })
+
+
+    await UserGroup.deleteMany({ group_id: groupId })
+    await GroupRequest.deleteMany({ groupId })
+    await Group.deleteOne({ _id: groupId })
+
+    return res.status(200).json({
+        status: true
+    })
+
+})
+
 export const updateGroupPicture = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) {
