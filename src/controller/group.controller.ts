@@ -454,6 +454,38 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
 });
 
 
+export const leaveGroup = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    const { groupId } = req.params
+    const userId = req?.user?._id!
+
+    const userExists = await User.findOne({ _id: userId })
+    if (!userExists) return res.status(404).json({ errors: "User not found" })
+
+    const groupExists = await Group.findOne({ _id: groupId }).populate('created_by')
+    if (!groupExists) return res.status(404).json({ errors: "Group was not found" })
+
+    const userIsMember = await UserGroup.findOne({ user_id: userId, group_id: groupId })
+    if (!userIsMember) return res.status(404).json({ errors: "User is Not a member" })
+
+    const created_by = groupExists.created_by as UserDoc
+    if (created_by._id == userId) return res.status(409).json({ status: false, errors: "You can't leave a group as an admin" })
+
+    const removedUser = await UserGroup.deleteMany({ user_id: userId, group_id: groupId })
+    if (!removedUser) return res.status(500).json({ errors: "Something went wrong" })
+
+    groupExists.memberCount -= 1
+    await groupExists.save()
+
+    res.status(200).json({
+        status: true
+    })
+})
+
 export const updateGroupPicture = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) {
