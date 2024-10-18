@@ -8,6 +8,8 @@ import { GenerateOTP, sendEmail } from "../utils/notification.utils";
 import { GeneratePassword, GenerateSalt, GenerateToken, ValidatePassword, ValidateToken, isTokenValid } from "../utils/password.utils";
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
+import moment from "moment";
+
 export const signUp = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
     const existingUser = await UserModel.findOne({ email: req.body.email });
@@ -213,17 +215,30 @@ export const resetPassword = asyncWrapper(async (req: Request, res: Response, ne
 });
 
 
+const generateProfileID = (national_id_number: string) => {
+    const registrationDate = moment().format("DDMM");
+    const year = moment().format("YY");
+
+    const personalID = national_id_number
+        ? national_id_number.padEnd(14, "0").slice(0, 14)
+        : Math.random().toString(36).substring(2, 16).padEnd(14, "0");
+
+    return `${registrationDate}${personalID}${year}`;
+};
+
+
 export const updateAccount = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) {
         return res.status(400).json({ message: "Access denied" });
     };
 
-    console.log(req.body)
+    const profileID = generateProfileID(req.body.national_id_number!);
 
     await UserModel.findByIdAndUpdate(req.user?._id, {
         $set: {
             ...req.body,
+            profileID
         },
         new: true
     });

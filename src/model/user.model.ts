@@ -3,6 +3,7 @@ import { Document, model, Schema } from "mongoose";
 const default_profile_pic = "https://res.cloudinary.com/djehh7gum/image/upload/v1729056803/k6eviapycaxss3e12v5e.png";
 
 export interface UserDoc extends Document {
+    profileID: string;
     title?: "Mr." | "Ms." | "Mrs." | "Dr." | "Prof.";
     email: string;
     password: string;
@@ -62,6 +63,7 @@ const UserSchema = new Schema<UserDoc>({
         required: false,
     },
     email: { type: String, required: true },
+    profileID: { type: String, required: true },
     password: { type: String, required: false },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
