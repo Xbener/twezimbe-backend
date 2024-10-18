@@ -51,7 +51,7 @@ const facebookStrategy = new FacebookStrategy({
     } else if (recordedUser.role === 'Admin') {
         emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/admin/auth/verifyotp?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
     } else {
-        emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/validateOTP?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
+        emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/public_pages/ValidateOTP?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
     }
 
     // Send email
@@ -106,7 +106,7 @@ const googleStrategy = new GoogleStrategy({
     } else if (recordedUser.role === 'Admin') {
         emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/admin/auth/verifyotp?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
     } else {
-        emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/validateOTP?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
+        emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/public_pages/ValidateOTP?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
     }
 
     // Send email
