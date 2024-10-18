@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import asyncWrapper from "../middlewares/AsyncWrapper";
 import { ValidateToken } from "../utils/password.utils";
-import Group from '../model/group.model'
-import Role from '../model/role.model'
+import Group, { GroupDoc } from '../model/group.model'
+import Role, { RoleDoc } from '../model/role.model'
 import UserGroup from '../model/user_group.model'
 import RoleUser from "../model/user_role";
 import mongoose from "mongoose";
@@ -363,6 +363,41 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
     });
 });
 
+export const getGroupMembers = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    }
+
+    const { groupId } = req.params
+    const userGroups = await UserGroup.find({ group_id: groupId })
+        .populate("user_id")
+        .populate("group_id")
+        .populate("role_id")
+
+    const updatedUserGroups = userGroups.map(group => {
+        const user = group.user_id as UserDoc;     // User information
+        const role = group.role_id as RoleDoc;     // Role information
+        const groupData = group.group_id as GroupDoc; // Group information
+
+        return {
+            userId: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profile_pic: user.profile_pic,
+            role: role?.role_name,   // e.g., GroupManager, GroupModerator, GroupUser
+            groupId: groupData._id,      // Group ID
+            groupName: groupData.name,   // Group name (if available)
+        };
+    });
+
+
+    res.status(200).json({
+        status: true,
+        members: updatedUserGroups
+    })
+})
 
 export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);

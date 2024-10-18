@@ -69,7 +69,7 @@ const UserSchema = new Schema<UserDoc>({
         required: false,
     },
     email: { type: String, required: true },
-    profileID: { type: String, required: true },
+    profileID: { type: String, required: false },
     password: { type: String, required: false },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
@@ -154,12 +154,12 @@ const UserSchema = new Schema<UserDoc>({
     },
     securityQuestions: [
         {
-            question: { type: String, required: true },
-            answer: { type: String, required: true },
+            question: { type: String, required: false },
+            answer: { type: String, required: false },
         }
     ],
     two_factor_secret: {
-        type: String, required: true
+        type: String, required: false
     },
     is_complete: {
         type: Boolean, required: true, default: false
