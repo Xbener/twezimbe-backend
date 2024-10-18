@@ -1,5 +1,5 @@
 import express from 'express';
-import { forgotPassword, getUserProfile, regenerateOTP, resetPassword, signIn, signUp, updateAccount, uploadProfilePicture, verifyOTP, verifyToken } from '../controller';
+import { forgotPassword, generate2FASecret, getUserProfile, regenerateOTP, resetPassword, signIn, signUp, updateAccount, uploadProfilePicture, verify2FAToken, verifyOTP, verifyToken } from '../controller';
 import { validateEmail, validateOTP, validatePasswordReset, validateUpdateUserInfo, validateUserSignIn, validateUserSignUp } from '../utils/userValidation';
 import passport from 'passport';
 import { upload } from '../utils/multer';
@@ -22,7 +22,9 @@ userRouter.post('/user/upload-profile-picture', upload.single('profile_pic'), up
 // })
 
 
-// socials authentication
+// 2FA
 
+userRouter.get('/2fa/setup', generate2FASecret)
+userRouter.post('/2fa/verify', verify2FAToken)
 
 export default userRouter; 

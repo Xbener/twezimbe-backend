@@ -9,6 +9,8 @@ import { GeneratePassword, GenerateSalt, GenerateToken, ValidatePassword, Valida
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
 import moment from "moment";
+import speakeasy from 'speakeasy';
+import qrcode from 'qrcode';
 
 export const signUp = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
@@ -300,4 +302,58 @@ export const uploadProfilePicture = asyncWrapper(async (req: Request, res: Respo
         user: updatedUser,
         status: true
     });
+});
+
+
+export const generate2FASecret = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+    const user = await UserModel.findOne({ _id: req?.user?._id })
+    if (!user) return res.status(404).json({ errors: "User not found" })
+    const secret = speakeasy.generateSecret({
+        name: "Twezimbe (webadmin@summitcl.com)",
+    });
+
+    // Optionally, you can store this `secret.base32` in your database for the user
+    // req?.user?.twoFactorSecret = secret.base32;
+
+
+
+    user.two_factor_secret = secret.base32;
+
+    // Generate the QR code for the user to scan
+    qrcode.toDataURL(secret.otpauth_url!, (err, dataURL: any) => {
+        if (err) {
+            return res.status(500).json({ message: "Error generating QR code" });
+        }
+        res.json({ secret: secret.base32, qrCodeUrl: dataURL });
+    });
+});
+
+
+export const verify2FAToken = asyncWrapper(async (req: Request, res: Response) => {
+
+       const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+    const user = await UserModel.findOne({ _id: req?.user?._id })
+    if (!user) return res.status(404).json({ errors: "User not found" })
+
+        
+    const { token } = req.body; // token is the TOTP the user inputs
+    const verified = speakeasy.totp.verify({
+        secret: user?.two_factor_secret, // retrieve the user's saved 2FA secret
+        encoding: 'base32',
+        token, // TOTP entered by the user
+        window: 1 // window allows for clock drift
+    });
+
+    if (verified) {
+        res.json({ message: "2FA verification successful!" });
+    } else {
+        res.status(400).json({ message: "Invalid 2FA token." });
+    }
 });

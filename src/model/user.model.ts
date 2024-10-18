@@ -57,7 +57,8 @@ export interface UserDoc extends Document {
     securityQuestions?: {
         question: string;
         answer: string;
-    }[]
+    }[];
+    two_factor_secret: string;
 }
 
 const UserSchema = new Schema<UserDoc>({
@@ -155,7 +156,10 @@ const UserSchema = new Schema<UserDoc>({
             question: { type: String, required: true },
             answer: { type: String, required: true },
         }
-    ]
+    ],
+    two_factor_secret: {
+        type: String, required: true
+    }
 }, {
     toJSON: {
         transform: (doc, ret) => {
