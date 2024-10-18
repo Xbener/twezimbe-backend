@@ -232,7 +232,7 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
     if (!isTokenValid) {
         return res.status(400).json({ message: "Access denied" });
     };
-
+    console.log(req.body)
     const profileID = generateProfileID(req.body.national_id_number!);
 
     await UserModel.findByIdAndUpdate(req.user?._id, {

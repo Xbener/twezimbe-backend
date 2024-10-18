@@ -67,30 +67,30 @@ export const validateUpdateUserInfo = [
         .isString()
         .withMessage('First name must be a string')
         .isLength({ min: 2 })
-        .withMessage('First name is required'),
+        .withMessage('First name is required').optional(),
     body('lastName')
         .isString()
         .withMessage('Last name must be a string')
         .isLength({ min: 2 })
-        .withMessage('Last name is required'),
+        .withMessage('Last name is required').optional(),
     body('email')
         .not()
         .isEmpty()
         .withMessage('Email is required')
         .isEmail()
         .withMessage('Invalid email')
-        .normalizeEmail(),
+        .normalizeEmail().optional(),
     body('phone')
         .not()
         .isEmpty()
         .withMessage('Phone number is required')
         .isLength({ min: 10, max: 10 })
-        .withMessage('Invalid phone number'),
+        .withMessage('Invalid phone number').optional(),
     body('code')
         .optional()
         .isString()
         .isLength({ min: 6, max: 6 })
-        .withMessage('Invalid code, payment code must be 6 characters long'),
+        .withMessage('Invalid code, payment code must be 6 characters long').optional(),
     body('addressLine1').optional().isString(),
     body('addressLine2').optional().isString(),
     body('city').optional().isString(),

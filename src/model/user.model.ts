@@ -152,8 +152,8 @@ const UserSchema = new Schema<UserDoc>({
     },
     securityQuestions: [
         {
-            question: String,
-            answer: String
+            question: { type: String, required: true },
+            answer: { type: String, required: true },
         }
     ]
 }, {
@@ -168,6 +168,11 @@ const UserSchema = new Schema<UserDoc>({
     },
     timestamps: true
 });
+
+UserSchema.path('securityQuestions').default([
+    { question: "What was the name of your first pet?", answer: "" },
+    { question: "What is the name of the street you grew up on?", answer: "" }
+]);
 
 const User = model<UserDoc>("User", UserSchema);
 export default User;
