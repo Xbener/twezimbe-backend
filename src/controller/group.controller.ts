@@ -252,7 +252,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
 
     const userId = existingUser?.id;
 
-    // Aggregation to get the group and its unique members
+    // Aggregation to get the group and its unique members along with their roles
     const groupDetails = await Group.aggregate([
         {
             $match: {
@@ -262,14 +262,15 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
         },
         {
             $lookup: {
-                from: 'user_groups', // Assuming this is the correct collection name for user groups
+                from: 'user_groups', // UserGroup collection
                 localField: '_id',
                 foreignField: 'group_id',
-                as: 'members'
+                as: 'userGroups' // Renamed to avoid confusion
             }
-        }, {
+        },
+        {
             $lookup: {
-                from: 'users', // Assuming this is the correct collection name for user groups
+                from: 'users', // Assuming this is the correct collection name for users
                 localField: 'created_by',
                 foreignField: '_id',
                 as: 'created_by'
@@ -278,20 +279,34 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
         {
             $lookup: {
                 from: 'users', // Collection containing user details
-                localField: 'members.user_id', // Assuming user_id field in user_groups
+                localField: 'userGroups.user_id', // Assuming user_id field in user_groups
                 foreignField: '_id',
                 as: 'memberDetails'
             }
         },
         {
             $unwind: {
-                path: '$memberDetails',
+                path: '$userGroups',
                 preserveNullAndEmptyArrays: true // Keep the group even if there are no members
             }
         },
         {
+            $lookup: {
+                from: 'roles', // Role collection to fetch role names
+                localField: 'userGroups.role_id', // Assuming role_id field in user_groups
+                foreignField: '_id',
+                as: 'roleDetails' // Get role details
+            }
+        },
+        {
+            $unwind: {
+                path: '$roleDetails',
+                preserveNullAndEmptyArrays: true // Keep members even if they have no role
+            }
+        },
+        {
             $group: {
-                _id: '$_id',
+                _id: { userId: '$userGroups.user_id', group_id: '$_id' }, // Group by userId to avoid duplicates
                 group_id: { $first: '$_id' },
                 group_name: { $first: '$name' },
                 group_type: { $first: '$group_type' },
@@ -306,7 +321,33 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
                 updatedAt: { $first: '$updatedAt' },
-                members: { $addToSet: '$memberDetails' }
+                members: {
+                    $addToSet: {
+                        user: { $arrayElemAt: ['$memberDetails', 0] }, // Get the user details
+                        role: '$roleDetails.role_name'
+                    }
+                }
+            }
+        },
+        {
+            // Final grouping to flatten members
+            $group: {
+                _id: '$_id.group_id', // Group by group_id
+                group_id: { $first: '$_id.group_id' },
+                group_name: { $first: '$group_name' },
+                group_type: { $first: '$group_type' },
+                group_state: { $first: '$group_state' },
+                group_picture: { $first: '$group_picture' },
+                description: { $first: '$description' },
+                tags: { $first: '$tags' },
+                invite_link: { $first: "$invite_link" },
+                upgraded: { $first: "$upgraded" },
+                isSacco: { $first: "$isSacco" },
+                created_by: { $first: '$created_by' },
+                del_flag: { $first: '$del_flag' },
+                createdAt: { $first: '$createdAt' },
+                updatedAt: { $first: '$updatedAt' },
+                members: { $push: { $arrayElemAt: ['$members', 0] } } // Push unique members
             }
         }
     ]);
@@ -321,8 +362,6 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
         group: groupDetails[0] // Returning the first (and only) group
     });
 });
-
-
 
 
 export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
