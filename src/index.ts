@@ -8,6 +8,10 @@ import './services/passport.strategies'
 import session from 'express-session'
 import { GenerateToken } from './utils/password.utils';
 import { config } from 'dotenv';
+import { createServer } from 'http';
+import { Server, Socket } from 'socket.io';
+import IOServer from './services/IOServer';
+
 config()
 export const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const cors = require("cors");
@@ -21,6 +25,12 @@ cloudinary.config({
 const StartServer = async () => {
 
     const app = express();
+    const server = createServer(app)
+    const io = new Server(server, {
+        cors: {
+            origin: "*"
+        },
+    })
     const corsOptions = {
         origin: '*',
     };
@@ -28,6 +38,7 @@ const StartServer = async () => {
     app.options('*', cors(corsOptions));
     await Database();
     await ExpressServer(app);
+    await IOServer(io)
 
     app.use(express.json({ limit: '5mb' }));
     app.use(express.urlencoded({ limit: '5mb', extended: true }));
@@ -77,7 +88,7 @@ const StartServer = async () => {
     })
 
 
-    app.listen(process.env.PORT || 3001, () => console.log('Server is running on port 3001'));
+    server.listen(process.env.PORT || 3001, () => console.log('Server is running on port 3001'));
 };
 
 StartServer();
