@@ -2,7 +2,7 @@ import { Schema, model } from 'mongoose';
 
 const MessageSchema = new Schema({
     sender_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    receiver_id: { type: Schema.Types.ObjectId, ref: 'User' },
+    receiver_id: [{ type: Schema.Types.ObjectId, ref: 'User' }], // Changed to an array
     chatroom: { type: Schema.Types.ObjectId, ref: 'ChatRoom', required: true },
     content: { type: String, required: true },
     messageType: { type: String, enum: ['text', 'image', 'video', 'sticker', 'gif'], default: 'text' },
@@ -18,7 +18,6 @@ const MessageSchema = new Schema({
     replyingTo: { type: Schema.Types.ObjectId, ref: 'Message' },
     edited: { type: Boolean, default: false },
     editedAt: { type: Date },
-
 }, {
     timestamps: true,
 });
