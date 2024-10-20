@@ -6,6 +6,7 @@ import productRouter from '../routes/application.routes';
 import roleRouter from '../routes/role.routes';
 import userRouter from '../routes/user.routes';
 import GroupsRouter from '../routes/group.route'
+import channelRouter from '../routes/channel.routes';
 
 export default async (app: Application) => {
     app.use(express.json());
@@ -30,6 +31,7 @@ export default async (app: Application) => {
     app.use('/api/v1/product', productRouter);
     app.use('/api/v1/role', roleRouter);
     app.use('/api/v1/groups', GroupsRouter)
+    app.use('/api/v1/channels', channelRouter)
 
     app.use(ErrorHandlerMiddleware);
 

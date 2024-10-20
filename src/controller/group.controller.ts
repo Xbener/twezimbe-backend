@@ -12,6 +12,9 @@ import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
 import GroupRequest from "../model/group_requests.model";
 import { stripe } from "..";
+import Channel from '../model/channel.model'
+import UserChannel from '../model/user_channel.model'
+import chatroomModel from "../model/chatroom.model";
 
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
@@ -43,6 +46,24 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
                 })
 
             })
+        }
+        const newChannel = await Channel.create({
+            name: "general",
+            description: "this is default channel",
+            groupId: newGroup?._id,
+            memberCount: 1,
+            created_by: newGroup?.created_by,
+        })
+        if (newChannel) {
+            const newChatRoom = await chatroomModel.create({ name: newChannel.name, ref: newChannel._id })
+            const role = await Role.findOne({ role_name: "ChannelAdmin" })
+
+            const newUserChannel = await UserChannel.create({
+                channel_id: newChannel._id,
+                role_id: role?._id,
+                user_id: req?.user?._id
+            })
+
         }
 
         await RoleUser.create({
