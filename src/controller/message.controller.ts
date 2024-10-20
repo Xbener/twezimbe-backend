@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Message from '../model/messages.model';
 import { ValidateToken } from '../utils/password.utils';
+import mongoose from 'mongoose';
 
 // Controller to get all messages for a specific chatroom
 export const getMessagesForChatroom = async (req: Request, res: Response) => {
@@ -11,7 +12,7 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
 
     try {
         const messages = await Message.aggregate([
-            { $match: { chatroom: chatroomId } },
+            { $match: { chatroom: new mongoose.Types.ObjectId(chatroomId) } },
             {
                 $lookup: {
                     from: 'users', // Assuming your user collection is named 'users'
@@ -21,15 +22,6 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                 },
             },
             { $unwind: '$sender' },
-            {
-                $project: {
-                    content: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    'sender.username': 1,
-                    'sender.profile_pic': 1,
-                },
-            },
             { $sort: { createdAt: 1 } },
         ]);
 
