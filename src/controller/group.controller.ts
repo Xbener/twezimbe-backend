@@ -56,8 +56,9 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
         })
         if (newChannel) {
             const newChatRoom = await chatroomModel.create({ name: newChannel.name, ref: newChannel._id })
-            const role = await Role.findOne({ role_name: "ChannelAdmin" })
 
+
+            const role = await Role.findOne({ role_name: "ChannelAdmin" })
             const newUserChannel = await UserChannel.create({
                 channel_id: newChannel._id,
                 role_id: role?._id,
@@ -451,6 +452,14 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
             role_id: role?._id
         });
 
+        const generalChannel = await Channel.findOne({ name: "general" })
+
+        const newChannelJoin = await UserChannel.create({
+            user_id: req.user?._id,
+            channel_id: generalChannel?._id,
+            role_id: role?._id
+        })
+
         if (newJoinGroup) {
             const existingRole = await RoleUser.findOne({ user_id: req.body.user_id, role_id: role?._id });
 
@@ -460,8 +469,6 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
                     role_id: role?._id
                 });
             }
-
-
 
             if (createdByUser && createdByUser.email) {
                 sendEmail(createdByUser.email, "Twezimbe Groups - New Member", `${group?.name} has a new member!`);

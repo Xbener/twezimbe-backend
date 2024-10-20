@@ -37,7 +37,7 @@ export const createMessage = async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
 
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
-    const { sender_id, chatroom, content, messageType, attachmentUrl } = req.body;
+    const { sender_id, chatroom, content, messageType, attachmentUrl, receiver_id } = req.body;
 
     try {
         const newMessage = await Message.create({
@@ -46,6 +46,7 @@ export const createMessage = async (req: Request, res: Response) => {
             content,
             messageType,
             attachmentUrl: attachmentUrl!,
+            receiver_id
         });
 
         res.status(201).json({ status: true, message: newMessage });

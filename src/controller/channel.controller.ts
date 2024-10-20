@@ -89,6 +89,14 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 as: "chatroom"
             }
         },
+         {
+            $lookup: {
+                from: "user_channels",
+                localField: "_id",
+                foreignField: "channel_id",
+                as: "members"
+            }
+        },
         {
             $unwind: {
                 path: "$chatroom",
@@ -118,7 +126,8 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 createdBy: { $first: "$created_by" },
                 chatroom: { $first: "$chatroom" },
                 createdAt: { $first: "$createdAt" },
-                updatedAt: { $first: "$updatedAt" }
+                updatedAt: { $first: "$updatedAt" },
+                members: { $first: "$members.user_id" },
             }
         },
         { $limit: 1 }
