@@ -186,7 +186,7 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 name: { $first: "$name" },
                 description: { $first: "$description" },
                 state: { $first: "$state" },
-                createdBy: { $first: "$created_by" },
+                created_by: { $first: "$created_by" },
                 chatroom: { $first: "$chatroom" },
                 createdAt: { $first: "$createdAt" },
                 updatedAt: { $first: "$updatedAt" },
