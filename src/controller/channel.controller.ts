@@ -6,6 +6,7 @@ import UserChannel from '../model/user_channel.model'
 import Role from "../model/role.model";
 import chatroomModel from "../model/chatroom.model";
 import mongoose from "mongoose";
+import { UserDoc } from "../model/user.model";
 
 
 export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
@@ -16,6 +17,7 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
     if (newChannel) {
         const newChatRoom = await chatroomModel.create({ name: newChannel.name, ref: newChannel._id })
         const role = await Role.findOne({ role_name: "ChannelAdmin" })
+        const memberRole = await Role.findOne({ role_name: "ChannelMember" })
 
         const newUserChannel = await UserChannel.create({
             channel_id: newChannel._id,
@@ -24,10 +26,18 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
         })
 
         if (newUserChannel) {
+            req.body.members.forEach(async (member: UserDoc) => {
+                await UserChannel.create({
+                    channel_id: newChannel._id,
+                    role_id: memberRole?._id,
+                    user_id: member._id || member?.userId
+                })
+            })
             return res.status(201).json({
                 status: true,
                 channel: newChannel
             })
+
         }
 
         return res.status(500).json({ errors: "unable to create new channel user" })
@@ -89,7 +99,7 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 as: "chatroom"
             }
         },
-         {
+        {
             $lookup: {
                 from: "user_channels",
                 localField: "_id",

@@ -347,7 +347,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 members: {
                     $addToSet: {
                         users: "$memberDetails",
-                        role: '$roleDetails.role_name'
+                        // role: '$roleDetails.role_name'
                     }
                 }
             }
@@ -370,7 +370,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
                 updatedAt: { $first: '$updatedAt' },
-                members: { $first: "$members" },
+                members: { $first: { $arrayElemAt: ["$members.users", 0] } },
             }
         }
     ]);

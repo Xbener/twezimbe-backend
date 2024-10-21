@@ -61,6 +61,7 @@ export interface UserDoc extends Document {
     two_factor_secret: string;
     is_complete: boolean;
     socketId?: string;
+    userId: Schema.Types.ObjectId
 }
 
 const UserSchema = new Schema<UserDoc>({
