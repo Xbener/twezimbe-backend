@@ -26,7 +26,7 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
         })
 
         if (newUserChannel) {
-            if(req.body.state.toLowerCase() === "public"){
+            if (req.body.state.toLowerCase() === "public") {
                 req.body.members.forEach(async (member: UserDoc) => {
                     await UserChannel.create({
                         channel_id: newChannel._id,
@@ -201,5 +201,34 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
     res.status(200).json({
         status: true,
         channel
+    })
+})
+
+
+export const addMemberToPrivateChannel = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+
+    const { channelId } = req.params
+    const { userId } = req.body
+
+    if (!userId) return res.status(400).json({ errors: "user is required" })
+
+    const channel = await Channel.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(channelId) }, { $inc: { memberCount: 1 } })
+    if (!channel) return res.status(404).json({ errors: "Channel was not found" })
+
+    const memberRole = await Role.findOne({ role_name: "ChannelMember" })
+    // check if is not user yet
+    const isMember = await UserChannel.findOne({ user_id: userId, channel_id: channelId })
+    if (isMember) return res.status(409).json({ errors: "User is already a member" })
+    const newUserChannel = UserChannel.create({
+        channel_id: channel?._id,
+        user_id: userId,
+        role_id: memberRole?._id
+    })
+
+    res.status(200).json({
+        status: true,
+        message: "User added successfully"
     })
 })
