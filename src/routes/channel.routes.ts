@@ -4,7 +4,7 @@ import { addChannel, getGroupChannels, getSingleGroupChannel, } from "../control
 const channelRouter = Router()
 
 channelRouter.post('/', addChannel)
-channelRouter.get('/:groupId', getGroupChannels)
+channelRouter.get('/:userId', getGroupChannels)
 channelRouter.get('/:groupId/:channelId', getSingleGroupChannel)
 
 export default channelRouter;

@@ -26,13 +26,15 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
         })
 
         if (newUserChannel) {
-            req.body.members.forEach(async (member: UserDoc) => {
-                await UserChannel.create({
-                    channel_id: newChannel._id,
-                    role_id: memberRole?._id,
-                    user_id: member._id || member?.userId
+            if(req.body.state.toLowerCase() === "public"){
+                req.body.members.forEach(async (member: UserDoc) => {
+                    await UserChannel.create({
+                        channel_id: newChannel._id,
+                        role_id: memberRole?._id,
+                        user_id: member._id || member?.userId
+                    })
                 })
-            })
+            }
             return res.status(201).json({
                 status: true,
                 channel: newChannel
@@ -42,7 +44,7 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
 
         return res.status(500).json({ errors: "unable to create new channel user" })
     }
-    return res.status(500).json({ errors: "unable to create new channel" })
+    return res.status(500).json({ errors: "unable to create new channel 1" })
 })
 
 
@@ -50,13 +52,13 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
 
-    const groupChannels = await Channel.aggregate([
+
+    const groupChannels = await UserChannel.aggregate([
         {
             $match: {
-                groupId: new mongoose.Types.ObjectId(req.params.groupId),
+                user_id: new mongoose.Types.ObjectId(req.params.userId),
             }
         },
-
         {
             $lookup: {
                 from: "chatrooms",
@@ -66,9 +68,60 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
             }
         },
         {
+            $lookup: {
+                from: 'users',
+                localField: "user_id",
+                foreignField: "_id",
+                as: "user"
+            }
+        },
+        {
+            $lookup: {
+                from: "channels",
+                localField: "channel_id",
+                foreignField: "_id",
+                as: "channel"
+            }
+        },
+        {
             $unwind: {
                 path: "$chatroom",
                 preserveNullAndEmptyArrays: true // In case there's no matching chatroom
+            }
+        },
+        {
+            $unwind: {
+                path: '$channel',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: '$user',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $group: {
+                _id: "$channel_id",
+                channel: { $first: "$channel" }, // Take the first channel object
+                user_id: { $first: "$user_id" }, // Include user_id if needed
+                role_id: { $first: "$role_id" }, // Take the first role_id (you can change this logic)
+                createdAt: { $first: "$createdAt" }, // Include createdAt if needed
+                updatedAt: { $first: "$updatedAt" }  // Include updatedAt if needed
+            }
+        },
+        {
+            $project: {
+                _id: "$channel._id",
+                name: "$channel.name",
+                groupId: "$channel.groupId",
+                memberCount: "$channel.memberCount",
+                description: "$channel.description",
+                state: "$channel.state",
+                created_by: "$channel.created_by",
+                createdAt: "$channel.createdAt",
+                updatedAt: "$channel.updatedAt"
             }
         }
     ]);

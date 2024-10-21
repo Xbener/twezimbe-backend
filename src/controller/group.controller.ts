@@ -47,24 +47,40 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
 
             })
         }
-        const newChannel = await Channel.create({
-            name: "general",
-            description: "this is default channel",
-            groupId: newGroup?._id,
-            memberCount: 1,
-            created_by: newGroup?.created_by,
-        })
-        if (newChannel) {
-            const newChatRoom = await chatroomModel.create({ name: newChannel.name, ref: newChannel._id })
+        const newChannels = await Channel.insertMany([
+            {
+                name: "general",
+                description: "this is the default channel",
+                groupId: newGroup?._id,
+                memberCount: 1,
+                created_by: newGroup?.created_by,
+                state: 'public'
+            },
+            {
+                name: "announcements",
+                description: "this is the announcements channel",
+                groupId: newGroup?._id,
+                memberCount: 1,
+                created_by: newGroup?.created_by,
+                state: 'public'
+            }
+        ])
+        if (newChannels) {
+            const chatRoomsData = newChannels.map(channel => ({
+                name: channel.name,
+                ref: channel._id
+            }));
 
+            const newChatRooms = await chatroomModel.insertMany(chatRoomsData);
 
             const role = await Role.findOne({ role_name: "ChannelAdmin" })
-            const newUserChannel = await UserChannel.create({
-                channel_id: newChannel._id,
+            const userChannelsData = newChannels.map(channel => ({
+                channel_id: channel._id,
                 role_id: role?._id,
                 user_id: req?.user?._id
-            })
+            }));
 
+            const newUserChannels = await UserChannel.insertMany(userChannelsData);
         }
 
         await RoleUser.create({
@@ -453,11 +469,14 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
             role_id: role?._id
         });
 
-        const generalChannel = await Channel.findOne({ name: "general", groupId: req.body.group_id });
-        const newUserChannel = await UserChannel.create({
-            channel_id: generalChannel?._id,
-            role_id: role?._id,
-            user_id: req?.user?._id
+        const generalChannel = await Channel.find({ state:'public', groupId: req.body.group_id });
+
+        generalChannel.forEach(async channel=>{
+            const newUserChannel = await UserChannel.create({
+                channel_id: channel?._id,
+                role_id: role?._id,
+                user_id: req?.user?._id
+            })
         })
 
         if (newJoinGroup) {

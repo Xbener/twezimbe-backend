@@ -27,11 +27,33 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     from: 'messages', // Assuming your user collection is named 'users'
                     localField: 'replyingTo',
                     foreignField: '_id',
-                    as: 'replyedTo',
+                    as: 'replyingTo',
                 },
             },
-            { $unwind: '$sender' },
+            {
+                $unwind: {
+                    path: "$sender",
+                    preserveNullAndEmptyArrays: true,
+                }
+            },
+            {
+                $unwind: {
+                    path: '$replyingTo',
+                    preserveNullAndEmptyArrays: true, 
+                }
+            },
             { $sort: { createdAt: 1 } },
+            {
+                $project: {
+                    replyingTo: "$replyingTo",
+                    _id: "$_id",
+                    sender: "$sender",
+                    content: "$content",
+                    createdAt: "$createdAt",
+                    edited: "$edited",
+                    updatedAt: "$updatedAt"
+                }
+            }
         ]);
 
         res.status(200).json({ messages });
