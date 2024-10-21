@@ -167,7 +167,8 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         del_flag: '$del_flag',
                         createdAt: '$createdAt',
                         updatedAt: '$updatedAt',
-                        memberCount: 1
+                        memberCount: 1,
+                        members: "$members"
                     }
                 }
             ]);

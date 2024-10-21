@@ -29,6 +29,17 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
             }
         })
 
+        socket.on('new-group-join', ({ receiver, joined_user }) => {
+            console.log("join group receiver", joined_user)
+            if (Array.isArray(receiver)) {
+                receiver.forEach((receiverId) => {
+                    socket.to(findSocketId(receiverId.user_id || receiverId)?.socketId as string).emit('new-user-joined-group', { joined_user });
+                });
+            } else {
+                socket.to(findSocketId(receiver)?.socketId as string).emit('new-user-joined-group', { joined_user });
+            }
+        })
+
         socket.on('disconnect', () => {
             const user = onlineUsers.find(u => u.socketId === socket.id);
             if (user) {
