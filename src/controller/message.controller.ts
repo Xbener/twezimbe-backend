@@ -71,3 +71,15 @@ export const editMessage = asyncWrapper(async (req: Request, res: Response) => {
         status: true
     })
 })
+
+export const deleteMessage = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+
+    const { messageId } = req.params
+    const message = await Message.findOneAndDelete({ _id: new mongoose.Types.ObjectId(messageId) })
+    if (!message) return res.status(500)
+    res.status(200).json({
+        status: true
+    })
+})

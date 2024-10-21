@@ -30,13 +30,32 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
         })
 
         socket.on('new-group-join', ({ receiver, joined_user }) => {
-            console.log("join group receiver", joined_user)
             if (Array.isArray(receiver)) {
                 receiver.forEach((receiverId) => {
                     socket.to(findSocketId(receiverId.user_id || receiverId)?.socketId as string).emit('new-user-joined-group', { joined_user });
                 });
             } else {
                 socket.to(findSocketId(receiver)?.socketId as string).emit('new-user-joined-group', { joined_user });
+            }
+        })
+
+        socket.on('is-typing', ({ message, currentUser, receiver }) => {
+            if (Array.isArray(receiver)) {
+                receiver.forEach((receiverId) => {
+                    socket.to(findSocketId(receiverId.user_id || receiverId)?.socketId as string).emit('is-typing', { message, currentUser });
+                });
+            } else {
+                socket.to(findSocketId(receiver)?.socketId as string).emit('is-typing', { message, currentUser });
+            }
+        })
+
+        socket.on('delete-message', ({ message, receiver }) => {
+            if (Array.isArray(receiver)) {
+                receiver.forEach((receiverId) => {
+                    socket.to(findSocketId(receiverId.user_id || receiverId)?.socketId as string).emit('deleted-message', message);
+                });
+            } else {
+                socket.to(findSocketId(receiver)?.socketId as string).emit('deleted-message', message);
             }
         })
 
