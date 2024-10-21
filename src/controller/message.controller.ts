@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Message from '../model/messages.model';
 import { ValidateToken } from '../utils/password.utils';
 import mongoose from 'mongoose';
+import asyncWrapper from '../middlewares/AsyncWrapper';
 
 // Controller to get all messages for a specific chatroom
 export const getMessagesForChatroom = async (req: Request, res: Response) => {
@@ -55,3 +56,18 @@ export const createMessage = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error creating message' });
     }
 };
+
+
+export const editMessage = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+
+    const { content } = req.body
+    const { messageId } = req.params
+    const message = await Message.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(messageId) }, { content, edited: true })
+    if (!message) return res.status(500).json({ errors: "unable to edit" })
+    res.status(200).json({
+        message,
+        status: true
+    })
+})
