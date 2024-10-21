@@ -39,7 +39,7 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
             {
                 $unwind: {
                     path: '$replyingTo',
-                    preserveNullAndEmptyArrays: true, 
+                    preserveNullAndEmptyArrays: true,
                 }
             },
             { $sort: { createdAt: 1 } },
@@ -51,7 +51,8 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     content: "$content",
                     createdAt: "$createdAt",
                     edited: "$edited",
-                    updatedAt: "$updatedAt"
+                    updatedAt: "$updatedAt",
+                    pinned: "$pinned"
                 }
             }
         ]);
@@ -112,5 +113,18 @@ export const deleteMessage = asyncWrapper(async (req: Request, res: Response) =>
     if (!message) return res.status(500)
     res.status(200).json({
         status: true
+    })
+})
+
+
+export const pinMessage = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+    const { messageId } = req.body
+    const message = await Message.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(messageId) }, { pinned: !req.body.pinned })
+    if (!message) return res.status(404).json({ errors: "Message to pin not found" })
+    res.status(200).json({
+        status: true,
+        message: "message pinned successfully"
     })
 })

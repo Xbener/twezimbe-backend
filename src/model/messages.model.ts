@@ -18,6 +18,7 @@ const MessageSchema = new Schema({
     replyingTo: { type: Schema.Types.ObjectId, ref: 'Message' },
     edited: { type: Boolean, default: false },
     editedAt: { type: Date },
+    pinned: { type: Boolean, required: true, default: false }
 }, {
     timestamps: true,
 });
