@@ -22,6 +22,14 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     as: 'sender',
                 },
             },
+            {
+                $lookup: {
+                    from: 'messages', // Assuming your user collection is named 'users'
+                    localField: 'replyingTo',
+                    foreignField: '_id',
+                    as: 'replyedTo',
+                },
+            },
             { $unwind: '$sender' },
             { $sort: { createdAt: 1 } },
         ]);
@@ -38,7 +46,7 @@ export const createMessage = async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
 
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
-    const { sender_id, chatroom, content, messageType, attachmentUrl, receiver_id } = req.body;
+    const { sender_id, chatroom, content, messageType, attachmentUrl, receiver_id, replyingTo } = req.body;
 
     try {
         const newMessage = await Message.create({
@@ -47,7 +55,8 @@ export const createMessage = async (req: Request, res: Response) => {
             content,
             messageType,
             attachmentUrl: attachmentUrl!,
-            receiver_id
+            receiver_id,
+            replyingTo
         });
 
         res.status(201).json({ status: true, message: newMessage });
