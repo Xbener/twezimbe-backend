@@ -452,12 +452,11 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
             role_id: role?._id
         });
 
-        const generalChannel = await Channel.findOne({ name: "general" })
-
-        const newChannelJoin = await UserChannel.create({
-            user_id: req.user?._id,
+        const generalChannel = await Channel.findOne({ name: "general", groupId: req.body.group_id });
+        const newUserChannel = await UserChannel.create({
             channel_id: generalChannel?._id,
-            role_id: role?._id
+            role_id: role?._id,
+            user_id: req?.user?._id
         })
 
         if (newJoinGroup) {
