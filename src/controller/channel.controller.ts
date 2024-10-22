@@ -191,6 +191,7 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 createdAt: { $first: "$createdAt" },
                 updatedAt: { $first: "$updatedAt" },
                 members: { $first: "$members.user_id" },
+                groupId: { $first: "$groupId" }
             }
         },
         { $limit: 1 }
@@ -248,11 +249,23 @@ export const updateChannel = asyncWrapper(async (req: Request, res: Response) =>
                     channel_id: req.params.channelId,
                     userId: memberId,
                     role_id: userRole?._id
-                })  
+                })
             }
         })
     }
     if (!channel) return res.status(404).json({ errors: "channel not found" })
+    res.status(200).json({
+        status: true
+    })
+})
+
+
+export const deleteChannel = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+
+    const channel = await Channel.findOneAndDelete({ _id: new mongoose.Types.ObjectId(req.params.channelId) })
+    if (!channel) return res.status(404).json({ errors: "Channel not found" })
     res.status(200).json({
         status: true
     })
