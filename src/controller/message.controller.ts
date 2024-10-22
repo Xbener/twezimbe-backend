@@ -155,7 +155,7 @@ export const addReaction = asyncWrapper(async (req: Request, res: Response) => {
     if (!messageId || !userId || !emoji) return res.status(400).json({ errors: "Invalid request" });
 
     // Check if the user has already reacted with this emoji
-    const isEmojiThere = await Message.findOne({
+    const existingReaction = await Message.findOne({
         _id: new mongoose.Types.ObjectId(messageId),
         reactions: {
             $elemMatch: {
@@ -164,23 +164,40 @@ export const addReaction = asyncWrapper(async (req: Request, res: Response) => {
             }
         }
     });
-    if (isEmojiThere) {
-        return res.status(409).json({ errors: "Already reacted" });
+
+    if (existingReaction) {
+        // If the reaction exists, remove it (unreact)
+        const message = await Message.findOneAndUpdate(
+            { _id: new mongoose.Types.ObjectId(messageId) },
+            { $pull: { reactions: { user_id: new mongoose.Types.ObjectId(userId), emoji } } },
+            { new: true }  // Return the updated document
+        );
+
+        if (!message) {
+            return res.status(404).json({ errors: "Unable to find message" });
+        }
+
+        return res.status(200).json({
+            status: true,
+            message: "Reaction removed successfully",
+            updatedReactions: message.reactions // Send updated reactions for real-time updates
+        });
+    } else {
+        // If the reaction doesn't exist, add it
+        const message = await Message.findOneAndUpdate(
+            { _id: new mongoose.Types.ObjectId(messageId) },
+            { $push: { reactions: { user_id: new mongoose.Types.ObjectId(userId), emoji } } },
+            { new: true }  // Return the updated document
+        );
+
+        if (!message) {
+            return res.status(404).json({ errors: "Unable to find message" });
+        }
+
+        return res.status(200).json({
+            status: true,
+            message: "Reaction added successfully",
+            updatedReactions: message.reactions // Send updated reactions for real-time updates
+        });
     }
-
-    // Add the new reaction
-    const message = await Message.findOneAndUpdate(
-        { _id: new mongoose.Types.ObjectId(messageId) },
-        { $push: { reactions: { user_id: userId, emoji } } },
-        { new: true }  // Return the updated document
-    );
-
-    if (!message) {
-        return res.status(404).json({ errors: "Unable to find message" });
-    }
-
-    res.status(200).json({
-        status: true,
-        message: "Reaction added successfully"
-    });
 });
