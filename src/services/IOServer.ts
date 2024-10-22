@@ -85,6 +85,22 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
             }
         });
 
+        socket.on('react-with-emoji', ({ msg, emoji, _id, receiver }) => {
+            if (Array.isArray(receiver)) {
+                receiver.forEach((receiverId) => {
+                    const socketId = findSocketId(receiverId.user_id || receiverId)?.socketId;
+                    if (socketId) {
+                        socket.to(socketId).emit('reacted-with-emoji', { msg, emoji });
+                    }
+                });
+            } else {
+                const socketId = findSocketId(receiver)?.socketId;
+                if (socketId) {
+                    socket.to(socketId).emit('reacted-with-emoji', { msg, emoji });
+                }
+            }
+        })
+
         // User disconnect event
         socket.on('disconnect', () => {
             const user = onlineUsers.find(u => u.socketId === socket.id);

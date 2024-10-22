@@ -157,10 +157,13 @@ export const addReaction = asyncWrapper(async (req: Request, res: Response) => {
     // Check if the user has already reacted with this emoji
     const isEmojiThere = await Message.findOne({
         _id: new mongoose.Types.ObjectId(messageId),
-        'reactions.user_id': userId,
-        'reactions.emoji': emoji
+        reactions: {
+            $elemMatch: {
+                user_id: new mongoose.Types.ObjectId(userId),
+                emoji: emoji
+            }
+        }
     });
-
     if (isEmojiThere) {
         return res.status(409).json({ errors: "Already reacted" });
     }
