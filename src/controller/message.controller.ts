@@ -54,7 +54,7 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     edited: "$edited",
                     updatedAt: "$updatedAt",
                     pinned: "$pinned",
-                    "reactions": "$reactions"
+                    reactions: "$reactions"
                 }
             }
         ]);

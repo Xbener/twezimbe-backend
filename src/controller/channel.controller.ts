@@ -82,8 +82,8 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
         {
             $lookup: {
                 from: "chatrooms",
-                localField: "channel_id",
-                foreignField: "ref",
+                localField: "ref",
+                foreignField: "channel._id",
                 as: "chatroom"
             }
         },
@@ -152,8 +152,8 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
         {
             $lookup: {
                 from: "chatrooms",
-                localField: "ref",
-                foreignField: "channel._id",
+                localField: "_id",
+                foreignField: "ref",
                 as: "chatroom"
             }
         },
