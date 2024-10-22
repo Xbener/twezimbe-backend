@@ -30,6 +30,14 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     as: 'replyingTo',
                 },
             },
+             {
+                $lookup: {
+                    from: 'chatroom', // Assuming your user collection is named 'users'
+                    localField: 'chatroom',
+                    foreignField: '_id',
+                    as: 'chatroom',
+                },
+            },
             {
                 $unwind: {
                     path: "$sender",
@@ -41,6 +49,12 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     path: '$replyingTo',
                     preserveNullAndEmptyArrays: true,
                 }
+            },  
+            {
+                $unwind: {
+                    path: '$chatroom',
+                    preserveNullAndEmptyArrays: true,
+                }
             },
             { $sort: { createdAt: 1 } },
             {
@@ -48,6 +62,7 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     replyingTo: "$replyingTo",
                     _id: "$_id",
                     sender: "$sender",
+                    chatroom: "$chatroom",
                     sender_id: "$sender_id",
                     content: "$content",
                     createdAt: "$createdAt",
@@ -72,8 +87,7 @@ export const createMessage = async (req: Request, res: Response) => {
 
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
     const { sender_id, chatroom, content, messageType, attachmentUrl, receiver_id, replyingTo } = req.body;
-
-    try {
+    try {   
         const newMessage = await Message.create({
             sender_id,
             chatroom,

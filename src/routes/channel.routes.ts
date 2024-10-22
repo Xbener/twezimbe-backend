@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { addChannel, addMemberToPrivateChannel, deleteChannel, getGroupChannels, getSingleGroupChannel, updateChannel, } from "../controller/channel.controller";
+import { addChannel, addMemberToPrivateChannel, deleteChannel, getGroupChannels, getSingleGroupChannel, getUserChatRooms, updateChannel, } from "../controller/channel.controller";
 
 const channelRouter = Router()
 
 channelRouter.post('/', addChannel)
+channelRouter.post('/chatrooms', getUserChatRooms)
 channelRouter.put('/:channelId', updateChannel)
 channelRouter.delete('/:channelId', deleteChannel)
 channelRouter.post('/:groupId/:channelId', getSingleGroupChannel)

@@ -15,7 +15,7 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
 
     const newChannel = await Channel.create({ ...req.body, created_by: req?.user?._id, memberCount: 1 })
     if (newChannel) {
-        const newChatRoom = await chatroomModel.create({ name: newChannel.name, ref: newChannel._id })
+        const newChatRoom = await chatroomModel.create({ name: newChannel.name, ref: newChannel._id, members: [req?.user?._id] })
         const role = await Role.findOne({ role_name: "ChannelAdmin" })
         const memberRole = await Role.findOne({ role_name: "ChannelMember" })
 
@@ -26,6 +26,7 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
             group_id: req.body?.groupId
         })
 
+        console.log(req.body.members)
         if (newUserChannel) {
             if (req.body.state.toLowerCase() === "public") {
                 req.body.members.forEach(async (member: UserDoc) => {
@@ -35,11 +36,24 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
                         user_id: member._id || member?.userId,
                         group_id: req?.body?.groupId
                     })
+
+                    const updatedChatRoom = await chatroomModel.findOneAndUpdate(
+                        { _id: newChatRoom?._id },
+                        { $push: { members: member?.userId } },
+                        { new: true } // This option returns the updated document
+                    );
+
+                    if (!updatedChatRoom) {
+                        console.log("Chatroom not found or update failed.");
+                    } else {
+                        console.log("Updated chatroom:", updatedChatRoom);
+                    }
                 })
             }
             return res.status(201).json({
                 status: true,
-                channel: newChannel
+                channel: newChannel,
+                chatroom: newChatRoom
             })
 
         }
@@ -47,6 +61,15 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
         return res.status(500).json({ errors: "unable to create new channel user" })
     }
     return res.status(500).json({ errors: "unable to create new channel 1" })
+})
+
+export const getUserChatRooms = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+    const { userId } = req.body
+
+    const chatrooms = await chatroomModel.find({ members: new mongoose.Types.ObjectId(userId) }).select('_id');
+    return res.status(200).json({ status: true, chatrooms: chatrooms.map(room => room?._id) })
 })
 
 
@@ -62,7 +85,7 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
                 group_id: new mongoose.Types.ObjectId(req.params.groupId)
             }
         },
-        
+
         {
             $lookup: {
                 from: 'users',
@@ -225,7 +248,7 @@ export const addMemberToPrivateChannel = asyncWrapper(async (req: Request, res: 
 
     const memberRole = await Role.findOne({ role_name: "ChannelMember" })
     // check if is not user yet
-    const isMember = await UserChannel.findOne({ user_id: userId, channel_id: channelId })
+    const isMember = await UserChannel.findOne({ user_id: userId, channel_id: channelId, group_id: groupId })
     if (isMember) return res.status(409).json({ errors: "User is already a member" })
     const newUserChannel = UserChannel.create({
         channel_id: channel?._id,
@@ -233,6 +256,7 @@ export const addMemberToPrivateChannel = asyncWrapper(async (req: Request, res: 
         role_id: memberRole?._id,
         group_id: groupId
     })
+    await chatroomModel.findOneAndUpdate({ ref: channel?._id, name: channel.name }, { $push: { members: userId } })
 
     res.status(200).json({
         status: true,
@@ -257,6 +281,7 @@ export const updateChannel = asyncWrapper(async (req: Request, res: Response) =>
                     role_id: userRole?._id,
                     group_id: channel?.groupId
                 })
+                await chatroomModel.findOneAndUpdate({ ref: channel?._id, name: channel?.name }, { $push: { members: memberId } })
             }
         })
     }

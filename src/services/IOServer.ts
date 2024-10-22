@@ -1,64 +1,81 @@
 import { DefaultEventsMap, Server } from "socket.io";
 import { UserDoc } from "../model/user.model";
+import chatroomModel from "../model/chatroom.model";
 
-let onlineUsers: UserDoc[] = []
+let onlineUsers: UserDoc[] = [];
 
 const findSocketId = (receiverId: string) => {
-    const user = onlineUsers.find(user => user._id === receiverId)
-    return user
-}
+    const user = onlineUsers.find(user => user._id === receiverId);
+    return user;
+};
 
 export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => {
     io.on('connection', (socket) => {
-        console.log(`${socket.id} connected`)
+        console.log(`${socket.id} connected`);
 
-        socket.on('add-online-user', user => {
+        // Add online user and join room
+        socket.on('add-online-user', async ({ user, userChatRooms }) => {
             onlineUsers.push({ socketId: socket.id, ...user });
             console.log('Online users:', onlineUsers.length);
             io.emit('user-logged-in', { user, onlineUsers });
         });
 
-        socket.on('new-message', ({ sender, receiver, message }) => {
-            console.log(receiver)
+        socket.on('join-chat-rooms', (chatroomIds: []) => {
+            console.log('chatroomId', chatroomIds)
+            chatroomIds.map(async (chatroomId: string) => {
+                await socket.join('chatroomId');
+                console.log(`Socket ${socket.id} joined ${chatroomId}`);
+            });
+        });
+
+        // Send message to specific chatroom
+        socket.on('new-message', ({ sender, receiver, sentTo, message, chatroomId }) => {
+            console.log(receiver, sentTo, chatroomId)
             if (Array.isArray(receiver)) {
                 receiver.forEach((receiverId) => {
-                    socket.to(findSocketId(receiverId)?.socketId as string).emit('new-message-added', { sender, message });
+                    const socketId = findSocketId(receiverId.user_id || receiverId)?.socketId;
+                    if (socketId) {
+                        socket.to(socketId).emit('new-message-added', { sender, sentTo, message });
+                    }
                 });
             } else {
-                socket.to(findSocketId(receiver)?.socketId as string).emit('new-message-added', { sender, message });
+                const socketId = findSocketId(receiver)?.socketId;
+                if (socketId) {
+                    socket.to(socketId).emit('new-message-added', { sender, sentTo, message });
+                }
             }
-        })
+        });
 
-        socket.on('new-group-join', ({ receiver, joined_user }) => {
+        // Notify users in the group when a new user joins
+        socket.on('new-group-join', ({ receiver, joined_user, chatroomId }) => {
             if (Array.isArray(receiver)) {
                 receiver.forEach((receiverId) => {
-                    socket.to(findSocketId(receiverId.user_id || receiverId)?.socketId as string).emit('new-user-joined-group', { joined_user });
+                    const socketId = findSocketId(receiverId.user_id || receiverId)?.socketId;
+                    if (socketId) {
+                        socket.to(socketId).emit('new-user-joined-group', { joined_user });
+                    }
                 });
             } else {
-                socket.to(findSocketId(receiver)?.socketId as string).emit('new-user-joined-group', { joined_user });
+                const socketId = findSocketId(receiver)?.socketId;
+                if (socketId) {
+                    socket.to(socketId).emit('new-user-joined-group', { joined_user });
+                }
             }
-        })
+        });
 
-        socket.on('is-typing', ({ message, currentUser, receiver }) => {
-            if (Array.isArray(receiver)) {
-                receiver.forEach((receiverId) => {
-                    socket.to(findSocketId(receiverId.user_id || receiverId)?.socketId as string).emit('is-typing', { message, currentUser });
-                });
-            } else {
-                socket.to(findSocketId(receiver)?.socketId as string).emit('is-typing', { message, currentUser });
-            }
-        })
+        // Handle typing notification
+        socket.on('is-typing', ({ message, currentUser, chatroomId }) => {
+            // Notify all users in the chatroom about typing status
+            socket.to(chatroomId).emit('is-typing', { message, currentUser });
+        });
 
-        socket.on('delete-message', ({ message, receiver }) => {
-            if (Array.isArray(receiver)) {
-                receiver.forEach((receiverId) => {
-                    socket.to(findSocketId(receiverId.user_id || receiverId)?.socketId as string).emit('deleted-message', message);
-                });
-            } else {
-                socket.to(findSocketId(receiver)?.socketId as string).emit('deleted-message', message);
-            }
-        })
+        // Delete message functionality
+        socket.on('delete-message', ({ message, receiver, chatroomId }) => {
+            // Notify all users in the chatroom about the deleted message
+            socket.to(chatroomId).emit('deleted-message', message);
+        });
 
+        // User disconnect event
         socket.on('disconnect', () => {
             const user = onlineUsers.find(u => u.socketId === socket.id);
             if (user) {
@@ -67,6 +84,5 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
                 io.emit('user-logged-out', { user, onlineUsers });
             }
         });
-    })
-
-}
+    });
+};

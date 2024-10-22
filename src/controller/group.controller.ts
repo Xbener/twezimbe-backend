@@ -68,7 +68,8 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
         if (newChannels) {
             const chatRoomsData = newChannels.map(channel => ({
                 name: channel.name,
-                ref: channel._id
+                ref: channel._id,
+                members: [req?.body?.created_by]
             }));
 
             const newChatRooms = await chatroomModel.insertMany(chatRoomsData);

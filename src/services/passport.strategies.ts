@@ -19,7 +19,6 @@ const facebookStrategy = new FacebookStrategy({
     // state: true
 }, async function (accessToken: string, refreshToken: string, profile: any, cb: (n: null, p: any) => void) {
 
-    console.log('facebook profile', profile)
     const existingUser = await UserModel.findOne({ email: profile._json.email });
     if (existingUser) {
         return cb(null, existingUser)
@@ -74,7 +73,6 @@ const googleStrategy = new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
 }, async function (accessToken, refreshToken, profile, cb) {
-    console.log('google profile', profile)
 
     const existingUser = await UserModel.findOne({ email: profile._json.email });
     if (existingUser) {
