@@ -208,6 +208,15 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 preserveNullAndEmptyArrays: true // In case there's no matching user
             }
         },
+        // Join users with members to get user details
+        {
+            $lookup: {
+                from: "users", // Join with the users collection
+                localField: "members.user_id", // members.user_id contains the IDs of the users
+                foreignField: "_id", // _id in the users collection
+                as: "membersDetails" // Populate membersDetails with user data
+            }
+        },
         {
             $group: {
                 _id: "$_id", // _id is required in the $group stage
@@ -218,12 +227,14 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 chatroom: { $first: "$chatroom" },
                 createdAt: { $first: "$createdAt" },
                 updatedAt: { $first: "$updatedAt" },
-                members: { $first: "$members.user_id" },
+                members: { $first: "$members.user_id" }, // Keep member IDs
+                membersDetails: { $first: "$membersDetails" }, // Populate user data
                 groupId: { $first: "$groupId" }
             }
         },
         { $limit: 1 }
     ]);
+
     if (!channel) return res.status(404).json({ errors: "Channel not found" })
     channel = channel.length > 0 ? channel[0] : null;
 
