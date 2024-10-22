@@ -8,6 +8,7 @@ import userRouter from '../routes/user.routes';
 import GroupsRouter from '../routes/group.route'
 import channelRouter from '../routes/channel.routes';
 import messageRouter from '../routes/message.route'
+import chatroomRouter from '../routes/chatroom.routes'
 
 export default async (app: Application) => {
     app.use(express.json());
@@ -34,6 +35,7 @@ export default async (app: Application) => {
     app.use('/api/v1/groups', GroupsRouter)
     app.use('/api/v1/channels', channelRouter)
     app.use('/api/v1/messages', messageRouter)
+    app.use('/api/v1/chatrooms', chatroomRouter)
 
     app.use(ErrorHandlerMiddleware);
 
