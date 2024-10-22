@@ -30,7 +30,6 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
 
         // Send message to specific chatroom
         socket.on('new-message', ({ sender, receiver, sentTo, message, chatroomId }) => {
-            console.log(receiver, sentTo, chatroomId)
             if (Array.isArray(receiver)) {
                 receiver.forEach((receiverId) => {
                     const socketId = findSocketId(receiverId.user_id || receiverId)?.socketId;
@@ -71,8 +70,19 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
 
         // Delete message functionality
         socket.on('delete-message', ({ message, receiver, chatroomId }) => {
-            // Notify all users in the chatroom about the deleted message
-            socket.to(chatroomId).emit('deleted-message', message);
+            if (Array.isArray(receiver)) {
+                receiver.forEach((receiverId) => {
+                    const socketId = findSocketId(receiverId.user_id || receiverId)?.socketId;
+                    if (socketId) {
+                        socket.to(socketId).emit('deleted-message', message);
+                    }
+                });
+            } else {
+                const socketId = findSocketId(receiver)?.socketId;
+                if (socketId) {
+                    socket.to(socketId).emit('deleted-message', message);
+                }
+            }
         });
 
         // User disconnect event
