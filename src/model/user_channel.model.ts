@@ -13,6 +13,11 @@ const UserGroupSchema = new Schema({
         ref: 'Channel',
         required: true
     },
+    group_id: {
+        type: ObjectId,
+        ref: 'groups',
+        required: 'true'
+    },
     role_id: {
         type: ObjectId,
         ref: 'Role',

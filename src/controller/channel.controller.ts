@@ -22,7 +22,8 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
         const newUserChannel = await UserChannel.create({
             channel_id: newChannel._id,
             role_id: role?._id,
-            user_id: req?.user?._id
+            user_id: req?.user?._id,
+            group_id: req.body?.groupId
         })
 
         if (newUserChannel) {
@@ -31,7 +32,8 @@ export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
                     await UserChannel.create({
                         channel_id: newChannel._id,
                         role_id: memberRole?._id,
-                        user_id: member._id || member?.userId
+                        user_id: member._id || member?.userId,
+                        group_id: req?.body?.groupId
                     })
                 })
             }
@@ -57,6 +59,7 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
         {
             $match: {
                 user_id: new mongoose.Types.ObjectId(req.params.userId),
+                group_id: new mongoose.Types.ObjectId(req.params.groupId)
             }
         },
         {
@@ -211,7 +214,7 @@ export const addMemberToPrivateChannel = asyncWrapper(async (req: Request, res: 
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
 
     const { channelId } = req.params
-    const { userId } = req.body
+    const { userId, groupId } = req.body
 
     if (!userId) return res.status(400).json({ errors: "user is required" })
 
@@ -225,7 +228,8 @@ export const addMemberToPrivateChannel = asyncWrapper(async (req: Request, res: 
     const newUserChannel = UserChannel.create({
         channel_id: channel?._id,
         user_id: userId,
-        role_id: memberRole?._id
+        role_id: memberRole?._id,
+        group_id: groupId
     })
 
     res.status(200).json({
@@ -248,7 +252,8 @@ export const updateChannel = asyncWrapper(async (req: Request, res: Response) =>
                 await UserChannel.create({
                     channel_id: req.params.channelId,
                     userId: memberId,
-                    role_id: userRole?._id
+                    role_id: userRole?._id,
+                    group_id: channel?.groupId
                 })
             }
         })

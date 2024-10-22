@@ -77,7 +77,8 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
             const userChannelsData = newChannels.map(channel => ({
                 channel_id: channel._id,
                 role_id: role?._id,
-                user_id: req?.user?._id
+                user_id: req?.user?._id,
+                group_id: channel?.groupId
             }));
 
             const newUserChannels = await UserChannel.insertMany(userChannelsData);
@@ -469,13 +470,14 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
             role_id: role?._id
         });
 
-        const generalChannel = await Channel.find({ state:'public', groupId: req.body.group_id });
+        const generalChannel = await Channel.find({ state: 'public', groupId: req.body.group_id });
 
-        generalChannel.forEach(async channel=>{
+        generalChannel.forEach(async channel => {
             const newUserChannel = await UserChannel.create({
                 channel_id: channel?._id,
                 role_id: role?._id,
-                user_id: req?.user?._id
+                user_id: req?.user?._id,
+                group_id: group?._id
             })
         })
 
