@@ -10,7 +10,7 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
 
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
     const { chatroomId } = req.params;
-
+    console.log(chatroomId)
     try {
         const messages = await Message.aggregate([
             { $match: { chatroom: new mongoose.Types.ObjectId(chatroomId) } },

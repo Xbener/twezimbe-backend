@@ -62,14 +62,7 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
                 group_id: new mongoose.Types.ObjectId(req.params.groupId)
             }
         },
-        {
-            $lookup: {
-                from: "chatrooms",
-                localField: "_id",
-                foreignField: "ref",
-                as: "chatroom"
-            }
-        },
+        
         {
             $lookup: {
                 from: 'users',
@@ -84,6 +77,14 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
                 localField: "channel_id",
                 foreignField: "_id",
                 as: "channel"
+            }
+        },
+        {
+            $lookup: {
+                from: "chatrooms",
+                localField: "channel_id",
+                foreignField: "ref",
+                as: "chatroom"
             }
         },
         {
@@ -124,7 +125,8 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
                 state: "$channel.state",
                 created_by: "$channel.created_by",
                 createdAt: "$channel.createdAt",
-                updatedAt: "$channel.updatedAt"
+                updatedAt: "$channel.updatedAt",
+                chatroom: "$chatroom"
             }
         }
     ]);
@@ -150,8 +152,8 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
         {
             $lookup: {
                 from: "chatrooms",
-                localField: "_id",
-                foreignField: "ref",
+                localField: "ref",
+                foreignField: "channel._id",
                 as: "chatroom"
             }
         },
