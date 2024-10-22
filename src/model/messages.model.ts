@@ -12,8 +12,8 @@ const MessageSchema = new Schema({
     reactions: [
         {
             user_id: { type: Schema.Types.ObjectId, ref: 'User' },
-            type: { type: String, enum: ['like', 'love', 'laugh', 'sad', 'angry'] },
-        },
+            type: { type: String, required: true, default: '' },
+        }
     ],
     replyingTo: { type: Schema.Types.ObjectId, ref: 'Message' },
     edited: { type: Boolean, default: false },

@@ -48,11 +48,13 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     replyingTo: "$replyingTo",
                     _id: "$_id",
                     sender: "$sender",
+                    sender_id: "$sender_id",
                     content: "$content",
                     createdAt: "$createdAt",
                     edited: "$edited",
                     updatedAt: "$updatedAt",
-                    pinned: "$pinned"
+                    pinned: "$pinned",
+                    "reactions": "$reactions"
                 }
             }
         ]);
