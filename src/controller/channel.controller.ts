@@ -232,3 +232,28 @@ export const addMemberToPrivateChannel = asyncWrapper(async (req: Request, res: 
         message: "User added successfully"
     })
 })
+
+
+export const updateChannel = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+
+    let channel = await Channel.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(req.params.channelId) }, { ...req.body })
+    if (req.body.state === 'public' && channel?.state === 'private') {
+        const userRole = await Role.findOne({ name: "ChannelMember" })
+        req.body.members.forEach(async (memberId: string) => {
+            const UserChannelExists = await UserChannel.findOne({ channel_id: req.params.channelId, user_id: memberId })
+            if (!UserChannelExists) {
+                await UserChannel.create({
+                    channel_id: req.params.channelId,
+                    userId: memberId,
+                    role_id: userRole?._id
+                })  
+            }
+        })
+    }
+    if (!channel) return res.status(404).json({ errors: "channel not found" })
+    res.status(200).json({
+        status: true
+    })
+})
