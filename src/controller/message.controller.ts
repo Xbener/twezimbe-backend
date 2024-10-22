@@ -30,7 +30,7 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     as: 'replyingTo',
                 },
             },
-             {
+            {
                 $lookup: {
                     from: 'chatroom', // Assuming your user collection is named 'users'
                     localField: 'chatroom',
@@ -49,7 +49,7 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     path: '$replyingTo',
                     preserveNullAndEmptyArrays: true,
                 }
-            },  
+            },
             {
                 $unwind: {
                     path: '$chatroom',
@@ -87,7 +87,7 @@ export const createMessage = async (req: Request, res: Response) => {
 
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
     const { sender_id, chatroom, content, messageType, attachmentUrl, receiver_id, replyingTo } = req.body;
-    try {   
+    try {
         const newMessage = await Message.create({
             sender_id,
             chatroom,
@@ -144,3 +144,40 @@ export const pinMessage = asyncWrapper(async (req: Request, res: Response) => {
         message: "message pinned successfully"
     })
 })
+
+
+export const addReaction = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
+
+    const { messageId, userId, emoji } = req.body;
+
+    if (!messageId || !userId || !emoji) return res.status(400).json({ errors: "Invalid request" });
+
+    // Check if the user has already reacted with this emoji
+    const isEmojiThere = await Message.findOne({
+        _id: new mongoose.Types.ObjectId(messageId),
+        'reactions.user_id': userId,
+        'reactions.emoji': emoji
+    });
+
+    if (isEmojiThere) {
+        return res.status(409).json({ errors: "Already reacted" });
+    }
+
+    // Add the new reaction
+    const message = await Message.findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(messageId) },
+        { $push: { reactions: { user_id: userId, emoji } } },
+        { new: true }  // Return the updated document
+    );
+
+    if (!message) {
+        return res.status(404).json({ errors: "Unable to find message" });
+    }
+
+    res.status(200).json({
+        status: true,
+        message: "Reaction added successfully"
+    });
+});

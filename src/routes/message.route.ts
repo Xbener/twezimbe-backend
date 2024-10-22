@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { createMessage, deleteMessage, editMessage, getMessagesForChatroom, pinMessage } from "../controller/message.controller";
+import { addReaction, createMessage, deleteMessage, editMessage, getMessagesForChatroom, pinMessage } from "../controller/message.controller";
 
 const router = Router()
+router.put('/add-reaction', addReaction);
 router.put('/pin', pinMessage);
 router.delete('/:messageId', deleteMessage);
 router.get('/:chatroomId', getMessagesForChatroom);

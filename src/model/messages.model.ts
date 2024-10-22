@@ -12,7 +12,7 @@ const MessageSchema = new Schema({
     reactions: [
         {
             user_id: { type: Schema.Types.ObjectId, ref: 'User' },
-            type: { type: String, required: true, default: '' },
+            emoji: { type: String, required: true }
         }
     ],
     replyingTo: { type: Schema.Types.ObjectId, ref: 'Message' },
