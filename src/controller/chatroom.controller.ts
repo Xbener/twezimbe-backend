@@ -54,20 +54,18 @@ export const createDMChatroom = asyncWrapper(async (req, res) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
-    console.log(req.body)
     const { type, members, name } = req.body
     if (!type || members?.length < 2 || !name) return res.status(400).json({ errors: "Invalid request" })
 
     // check if dm exists
     const existingDM = await chatroomModel.findOne({
         type: 'dm',
-        name,
         members: { $all: members }
     });
 
 
     if (existingDM) {
-        return res.status(400).json({ status: true, chatroom: await existingDM.populate('members') });
+        return res.status(200).json({ status: true, chatroom: await existingDM.populate('members') });
     }
     const newChatroom = await chatroomModel.create({
         name,

@@ -9,6 +9,11 @@ const findSocketId = (receiverId: string) => {
     return user;
 };
 
+
+function extractUserIds(users: UserDoc[]) {
+    return users.map(user => user.id);
+}
+
 export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => {
     io.on('connection', (socket) => {
         console.log(`${socket.id} connected`);
@@ -115,6 +120,20 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
                 if (socketId) {
                     socket.to(socketId).emit('removed-emoji', { msg, emoji });
                 }
+            }
+        })
+
+        socket.on('dm', vl => {
+            const userIds = extractUserIds(vl.dm.members as UserDoc[]);
+
+            console.log('userIds', userIds)
+            if (Array.isArray(vl.dm.members)) {
+                userIds.forEach((receiverId) => {
+                    const socketId = findSocketId(receiverId)?.socketId;
+                    if (socketId) {
+                        socket.to(socketId).emit('dm-ed', vl);
+                    }
+                });
             }
         })
 
