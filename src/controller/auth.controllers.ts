@@ -241,7 +241,7 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
         $set: {
             ...req.body,
             profileID,
-            is_complete:true
+            is_complete: true
         },
         new: true
     });
@@ -336,14 +336,14 @@ export const generate2FASecret = asyncWrapper(async (req: Request, res: Response
 
 export const verify2FAToken = asyncWrapper(async (req: Request, res: Response) => {
 
-       const isTokenValid = await ValidateToken(req);
+    const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) {
         return res.status(400).json({ message: "Access denied" });
     };
     const user = await UserModel.findOne({ _id: req?.user?._id })
     if (!user) return res.status(404).json({ errors: "User not found" })
 
-        
+
     const { token } = req.body; // token is the TOTP the user inputs
     const verified = speakeasy.totp.verify({
         secret: user?.two_factor_secret, // retrieve the user's saved 2FA secret
@@ -358,3 +358,14 @@ export const verify2FAToken = asyncWrapper(async (req: Request, res: Response) =
         res.status(400).json({ message: "Invalid 2FA token." });
     }
 });
+
+
+export const getAllUsers = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    const users = await UserModel.find({ _id: { $ne: req?.user?._id } });
+    return res.status(200).json({ status: true, users })
+})
