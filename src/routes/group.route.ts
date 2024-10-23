@@ -9,14 +9,14 @@ roleRouter.get('/public', getPublicGroups);
 roleRouter.get('/findByUserId', getJoinedGroupList);
 roleRouter.post('/join', joinGroup);
 roleRouter.put('/update', updateGroup);
-roleRouter.get('/:groupId', getGroupById)
 roleRouter.put('/upload-group-picture', upload.single('group_picture'), updateGroupPicture)
-roleRouter.post("/leave/:groupId", leaveGroup)
 
 roleRouter.post('/requests', RequestToJoinGroup)
-roleRouter.get('/requests/:groupId', getGroupRequests)
 roleRouter.delete('/requests', declineRequest)
 roleRouter.put('/requests', acceptRequest)
+roleRouter.get('/:groupId', getGroupById)
+roleRouter.post("/leave/:groupId", leaveGroup)
+roleRouter.get('/requests/:groupId', getGroupRequests)
 
 
 roleRouter.get('/members/:groupId', getGroupMembers)
