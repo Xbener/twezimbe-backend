@@ -99,11 +99,11 @@ export const createMessage = async (req: Request, res: Response) => {
             replyingTo
         });
 
-        const unreadEntries = receiver_id.map((receiver: string) => {
-            if (receiver !== sender_id) return { messageId: newMessage._id, userId: receiver }
+        const unreadEntries = receiver_id.map(async (receiver: string) => {
+            if (receiver !== sender_id) {
+                await readreceiptsModel.create({ messageId: newMessage._id, userId: receiver })
+            }
         })
-        
-        await readreceiptsModel.insertMany(unreadEntries)
 
         res.status(201).json({ status: true, message: newMessage });
     } catch (error) {
@@ -210,3 +210,31 @@ export const addReaction = asyncWrapper(async (req: Request, res: Response) => {
 });
 
 
+
+
+export const getUnreadMessages = asyncWrapper(async (req, res) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
+
+    const unreadMessages = await readreceiptsModel.aggregate([
+        {
+            $match: {
+                userId: new mongoose.Types.ObjectId(req.user?._id)
+            }
+        },
+        {
+            $lookup: {
+                from: 'messages',
+                localField: "messageId",
+                foreignField: '_id',
+                as: 'message'
+            }
+        }
+    ])
+
+
+    return res.status(200).json({
+        status: true,
+        unreadMessages
+    })
+})

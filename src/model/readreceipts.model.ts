@@ -4,7 +4,7 @@ const ReadReceiptSchema = new Schema({
     messageId: { type: Schema.Types.ObjectId, ref: 'messages', required: true },
     userId: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     isRead: { type: Boolean, required: true, default: false },
-    readAt: { type: Boolean, required: true },
+    readAt: { type: Boolean, required: false },
 
 }, {
     timestamps: true
