@@ -3,6 +3,7 @@ import Message from '../model/messages.model';
 import { ValidateToken } from '../utils/password.utils';
 import mongoose from 'mongoose';
 import asyncWrapper from '../middlewares/AsyncWrapper';
+import readreceiptsModel from '../model/readreceipts.model';
 
 // Controller to get all messages for a specific chatroom
 export const getMessagesForChatroom = async (req: Request, res: Response) => {
@@ -97,6 +98,12 @@ export const createMessage = async (req: Request, res: Response) => {
             receiver_id,
             replyingTo
         });
+
+        const unreadEntries = receiver_id.map((receiver: string) => {
+            if (receiver !== sender_id) return { messageId: newMessage._id, userId: receiver }
+        })
+        
+        await readreceiptsModel.insertMany(unreadEntries)
 
         res.status(201).json({ status: true, message: newMessage });
     } catch (error) {
@@ -201,3 +208,5 @@ export const addReaction = asyncWrapper(async (req: Request, res: Response) => {
         });
     }
 });
+
+

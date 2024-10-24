@@ -482,6 +482,22 @@ export const joinGroup = asyncWrapper(async (req: Request, res: Response, next: 
                 user_id: req?.user?._id,
                 group_id: group?._id
             })
+
+            await chatroomModel.updateMany(
+                {
+                    ref: channel?._id,
+                    $or: [
+                        { name: 'general' },
+                        { name: 'announcements' }
+                    ]
+                },
+                {
+                    $push: {
+                        members: req?.user?._id
+                    }
+                }
+            );
+
         })
 
         if (newJoinGroup) {
@@ -781,6 +797,21 @@ export const acceptRequest = asyncWrapper(async (req: Request, res: Response, ne
             user_id: userId,
             group_id: groupId
         })
+
+        await chatroomModel.updateMany(
+            {
+                ref: channel?._id,
+                $or: [
+                    { name: 'general' },
+                    { name: 'announcements' }
+                ]
+            },
+            {
+                $push: {
+                    members: userId
+                }
+            }
+        );
     })
 
     if (newJoinGroup) {
