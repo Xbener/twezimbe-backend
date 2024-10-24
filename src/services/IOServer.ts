@@ -39,13 +39,13 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
                 receiver.forEach((receiverId) => {
                     const socketId = findSocketId(receiverId.user_id || receiverId)?.socketId;
                     if (socketId) {
-                        socket.to(socketId).emit('new-message-added', { sender, sentTo, message });
+                        socket.to(socketId).emit('new-message-added', { sender, sentTo, chatroomId, message });
                     }
                 });
             } else {
                 const socketId = findSocketId(receiver)?.socketId;
                 if (socketId) {
-                    socket.to(socketId).emit('new-message-added', { sender, sentTo, message });
+                    socket.to(socketId).emit('new-message-added', { sender, sentTo, chatroomId, message });
                 }
             }
         });

@@ -5,6 +5,7 @@ const ReadReceiptSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     isRead: { type: Boolean, required: true, default: false },
     readAt: { type: Boolean, required: false },
+    chatroom: { type: Schema.Types.ObjectId, ref: 'chatrooms', required: true }
 
 }, {
     timestamps: true

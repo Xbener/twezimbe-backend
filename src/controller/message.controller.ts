@@ -101,7 +101,7 @@ export const createMessage = async (req: Request, res: Response) => {
 
         const unreadEntries = receiver_id.map(async (receiver: string) => {
             if (receiver !== sender_id) {
-                await readreceiptsModel.create({ messageId: newMessage._id, userId: receiver })
+                await readreceiptsModel.create({ messageId: newMessage._id, userId: receiver, chatroom })
             }
         })
 
@@ -228,6 +228,20 @@ export const getUnreadMessages = asyncWrapper(async (req, res) => {
                 localField: "messageId",
                 foreignField: '_id',
                 as: 'message'
+            }
+        },
+        {
+            $lookup: {
+                from: 'chatrooms',
+                localField: "chatroom",
+                foreignField: '_id',
+                as: 'chatroom'
+            }
+        },
+        {
+            $unwind: {
+                path: "$chatroom",
+                preserveNullAndEmptyArrays: true
             }
         }
     ])
