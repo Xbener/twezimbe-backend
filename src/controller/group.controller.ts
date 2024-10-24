@@ -769,6 +769,18 @@ export const acceptRequest = asyncWrapper(async (req: Request, res: Response, ne
         role_id: role?._id
     });
 
+    const generalChannel = await Channel.find({ state: 'public', groupId });
+    const channelRole = await Role.findOne({ role_name: "ChannelMember"})
+
+    generalChannel.forEach(async channel => {
+        const newUserChannel = await UserChannel.create({
+            channel_id: channel?._id,
+            role_id: channelRole?._id,
+            user_id: userId,
+            group_id: groupId
+        })
+    })
+
     if (newJoinGroup) {
         // Create role if not exists
         const existingRole = await RoleUser.findOne({ user_id: userId, role_id: role?._id });

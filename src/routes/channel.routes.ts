@@ -5,10 +5,10 @@ const channelRouter = Router()
 
 channelRouter.post('/', addChannel)
 channelRouter.post('/chatrooms', getUserChatRooms)
+channelRouter.put('/:channelId/add-member', addMemberToPrivateChannel)
 channelRouter.put('/:channelId', updateChannel)
+channelRouter.get('/:groupId/:userId', getGroupChannels)
 channelRouter.delete('/:channelId', deleteChannel)
 channelRouter.post('/:groupId/:channelId', getSingleGroupChannel)
-channelRouter.get('/:groupId/:userId', getGroupChannels)
-channelRouter.put('/:channelId/add-member', addMemberToPrivateChannel)
 
 export default channelRouter;

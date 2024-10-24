@@ -232,7 +232,7 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 groupId: { $first: "$groupId" }
             }
         },
-        { $limit: 1 }
+        // { $limit: 1 }
     ]);
 
     if (!channel) return res.status(404).json({ errors: "Channel not found" })
