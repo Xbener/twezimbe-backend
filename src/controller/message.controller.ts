@@ -252,3 +252,19 @@ export const getUnreadMessages = asyncWrapper(async (req, res) => {
         unreadMessages
     })
 })
+
+
+export const markAsRead = asyncWrapper(async (req, res) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
+
+    const { messageId, userId } = req.body
+    if(!userId||!messageId) return res.status(400).json({errors:"Invalid request"})
+    
+    await readreceiptsModel.updateOne(
+        { isRead: true, readAt: new Date() },
+        { where: { messageId, userId } }
+    );
+
+    res.status(200).json({ message: 'Message marked as read' });
+})

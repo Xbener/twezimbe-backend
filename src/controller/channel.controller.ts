@@ -105,8 +105,8 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
         {
             $lookup: {
                 from: "chatrooms",
-                localField: "ref",
-                foreignField: "channel._id",
+                localField: "channel_id",
+                foreignField: "ref",
                 as: "chatroom"
             }
         },
@@ -135,7 +135,8 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
                 user_id: { $first: "$user_id" }, // Include user_id if needed
                 role_id: { $first: "$role_id" }, // Take the first role_id (you can change this logic)
                 createdAt: { $first: "$createdAt" }, // Include createdAt if needed
-                updatedAt: { $first: "$updatedAt" }  // Include updatedAt if needed
+                updatedAt: { $first: "$updatedAt" },  // Include updatedAt if needed
+                chatroom: { $first: "$chatroom" }  // Include updatedAt if needed
             }
         },
         {
