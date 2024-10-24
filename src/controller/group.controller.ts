@@ -287,6 +287,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
     }
 
     const existingUser = await User.findOne({ email: req.user?.email });
+    const firstChannel = await Channel.findOne({ groupId: new mongoose.Types.ObjectId(req.params.groupId) }).select("_id")
     if (!existingUser) {
         return res.status(400).json({ message: "User not found" });
     }
@@ -400,7 +401,8 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
     res.status(200).json({
         Success: true,
         message: "Group found",
-        group: groupDetails[0] // Returning the first (and only) group
+        group: groupDetails[0],
+        default_channel: firstChannel?._id,
     });
 });
 
