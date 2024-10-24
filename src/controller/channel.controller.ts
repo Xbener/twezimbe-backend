@@ -165,6 +165,17 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
 
+    console.log(req.body)
+    const { userId } = req.body
+    if (!userId) {
+        return res.status(400).json({ errors: "User is required" });
+    }
+
+    const isUserMember = await chatroomModel.findOne({ ref: req.params.channelId, members: { $in: [req.body.userId] } });
+
+    if (!isUserMember) {
+        return res.status(403).json({ status: false, errors: "You are not a member of this room" });
+    }
     let channel = await Channel.aggregate([
         {
             $match: {

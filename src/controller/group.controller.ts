@@ -530,6 +530,8 @@ export const leaveGroup = asyncWrapper(async (req: Request, res: Response) => {
     const removedUser = await UserGroup.deleteMany({ user_id: userId, group_id: groupId })
     if (!removedUser) return res.status(500).json({ errors: "Something went wrong" })
 
+    const removedChannels = await UserChannel.deleteMany({ user_id: userId, group_id: groupId })
+
     groupExists.memberCount -= 1
     await groupExists.save()
 
@@ -770,7 +772,7 @@ export const acceptRequest = asyncWrapper(async (req: Request, res: Response, ne
     });
 
     const generalChannel = await Channel.find({ state: 'public', groupId });
-    const channelRole = await Role.findOne({ role_name: "ChannelMember"})
+    const channelRole = await Role.findOne({ role_name: "ChannelMember" })
 
     generalChannel.forEach(async channel => {
         const newUserChannel = await UserChannel.create({

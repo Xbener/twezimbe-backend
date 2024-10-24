@@ -91,6 +91,17 @@ export const useGetSingleChatroom = asyncWrapper(async (req, res) => {
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
     const { chatroomId } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ errors: "User is required" });
+    }
+
+    const isUserMember = await chatroomModel.findOne({ _id: chatroomId, members: { $in: [userId] } });
+
+    if (!isUserMember) {
+        return res.status(403).json({ status: false, errors: "You are not a member of this room" });
+    }
 
     const chatroom = await chatroomModel.aggregate([
         {
@@ -127,7 +138,7 @@ export const useGetSingleChatroom = asyncWrapper(async (req, res) => {
 
     // Since aggregate returns an array, return the first item
     if (!chatroom || chatroom.length === 0) {
-        return res.status(404).json({ errors: "Chat not found" });
+        return res.status(404).json({ status: false, errors: "Chat not found" });
     }
 
     res.status(200).json({
