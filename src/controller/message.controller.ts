@@ -259,12 +259,8 @@ export const markAsRead = asyncWrapper(async (req, res) => {
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
     const { messageId, userId } = req.body
-    if(!userId||!messageId) return res.status(400).json({errors:"Invalid request"})
-    
-    await readreceiptsModel.updateOne(
-        { isRead: true, readAt: new Date() },
-        { where: { messageId, userId } }
-    );
-
+    if (!userId || !messageId) return res.status(400).json({ errors: "Invalid request" })
+    console.log(req.body)
+    await readreceiptsModel.updateMany({ messageId: new mongoose.Types.ObjectId(messageId), userId: new mongoose.Types.ObjectId(userId) }, { $set: { isRead: true, readAt: new Date() } }, { new: true })
     res.status(200).json({ message: 'Message marked as read' });
 })
