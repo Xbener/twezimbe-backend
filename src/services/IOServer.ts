@@ -35,6 +35,7 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
 
         // Send message to specific chatroom
         socket.on('new-message', ({ sender, receiver, sentTo, message, chatroomId }) => {
+            
             if (Array.isArray(receiver)) {
                 receiver.forEach((receiverId) => {
                     const socketId = findSocketId(receiverId.user_id || receiverId)?.socketId;

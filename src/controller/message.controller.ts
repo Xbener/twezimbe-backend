@@ -4,6 +4,8 @@ import { ValidateToken } from '../utils/password.utils';
 import mongoose from 'mongoose';
 import asyncWrapper from '../middlewares/AsyncWrapper';
 import readreceiptsModel from '../model/readreceipts.model';
+import Group, { GroupDoc } from '../model/group.model'
+import channelModel from '../model/channel.model';
 
 // Controller to get all messages for a specific chatroom
 export const getMessagesForChatroom = async (req: Request, res: Response) => {
@@ -216,6 +218,7 @@ export const getUnreadMessages = asyncWrapper(async (req, res) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
+    // Initial unread messages aggregation
     const unreadMessages = await readreceiptsModel.aggregate([
         {
             $match: {
@@ -225,7 +228,7 @@ export const getUnreadMessages = asyncWrapper(async (req, res) => {
         {
             $lookup: {
                 from: 'messages',
-                localField: "messageId",
+                localField: 'messageId',
                 foreignField: '_id',
                 as: 'message'
             }
@@ -233,25 +236,55 @@ export const getUnreadMessages = asyncWrapper(async (req, res) => {
         {
             $lookup: {
                 from: 'chatrooms',
-                localField: "chatroom",
+                localField: 'chatroom',
                 foreignField: '_id',
                 as: 'chatroom'
             }
         },
         {
-            $unwind: {
-                path: "$chatroom",
-                preserveNullAndEmptyArrays: true
+            $lookup: {
+                from: 'users',
+                localField: 'message.sender_id',
+                foreignField: '_id',
+                as: 'sender'
             }
+        },
+        {
+            $unwind: { path: '$chatroom', preserveNullAndEmptyArrays: true }
+        },
+        {
+            $unwind: { path: '$sender', preserveNullAndEmptyArrays: true }
         }
-    ])
+    ]);
 
+    // Process each unread message, fetching group data if chatroom type is 'channel'
+    const processedMessages = await Promise.all(
+        unreadMessages.map(async (message) => {
+            if (message.chatroom?.type === 'channel' && message.chatroom.ref) {
+                // Fetch the Channel document to get the groupId
+                const channel = await channelModel.findById(message.chatroom.ref, 'groupId');
+
+                if (channel?.groupId) {
+                    // Use groupId from Channel to fetch the Group document
+                    const group = await Group.findById(channel.groupId, 'group_picture name');
+                    message.contact = group || null;  // Add group info or null if not found
+                } else {
+                    message.contact = null;
+                }
+            } else {
+                // Use the sender as contact info for direct messages (DMs)
+                message.contact = message.sender || null;
+            }
+            return message;
+        })
+    );
 
     return res.status(200).json({
         status: true,
-        unreadMessages
-    })
-})
+        unreadMessages: processedMessages,
+    });
+});
+
 
 
 export const markAsRead = asyncWrapper(async (req, res) => {
