@@ -4,9 +4,9 @@ const MessageSchema = new Schema({
     sender_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     receiver_id: [{ type: Schema.Types.ObjectId, ref: 'User' }], // Changed to an array
     chatroom: { type: Schema.Types.ObjectId, ref: 'ChatRoom', required: true },
-    content: { type: String, required: true },
+    content: { type: String, required: false, default: "" },
     messageType: { type: String, enum: ['text', 'image', 'video', 'sticker', 'gif'], default: 'text' },
-    attachmentUrl: { type: String },
+    attachmentUrls: [{ type: String }],
     read: { type: Boolean, default: false },
     status: { type: String, enum: ['sent', 'delivered', 'seen'], default: 'sent' },
     reactions: [

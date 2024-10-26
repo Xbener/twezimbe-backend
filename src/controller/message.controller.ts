@@ -6,6 +6,7 @@ import asyncWrapper from '../middlewares/AsyncWrapper';
 import readreceiptsModel from '../model/readreceipts.model';
 import Group, { GroupDoc } from '../model/group.model'
 import channelModel from '../model/channel.model';
+import { v2 as cloudinary } from 'cloudinary'
 
 // Controller to get all messages for a specific chatroom
 export const getMessagesForChatroom = async (req: Request, res: Response) => {
@@ -70,6 +71,7 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
                     content: "$content",
                     createdAt: "$createdAt",
                     edited: "$edited",
+                    attachmentUrls: "$attachmentUrls",
                     updatedAt: "$updatedAt",
                     pinned: "$pinned",
                     reactions: "$reactions"
@@ -84,19 +86,44 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
     }
 };
 
+
+
+export const uploadMessagePictures = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
+
+    const attachmentUrls: string[] = [];
+
+    // Ensure req.files is of type File[]
+    if (req.files && Array.isArray(req.files)) {
+        for (const file of req.files) {
+            // Assuming file is of type Express.Multer.File or similar
+            const uploadResult = await cloudinary.uploader.upload(file.path);
+            attachmentUrls.push(uploadResult.secure_url);
+        }
+    }
+    if (!attachmentUrls.length) return res.status(500).json({ status: false, errors: "Unable to upload files" })
+    // Return the attachment URLs or handle them as needed
+    return res.status(200).json({ status: true, attachmentUrls });
+});
+
+
 // Controller to create a new message in a chatroom
 export const createMessage = async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
 
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
-    const { sender_id, chatroom, content, messageType, attachmentUrl, receiver_id, replyingTo } = req.body;
+    const { sender_id, chatroom, content, messageType, attachmentUrls, receiver_id, replyingTo } = req.body;
+
+
+
     try {
         const newMessage = await Message.create({
             sender_id,
             chatroom,
             content,
             messageType,
-            attachmentUrl: attachmentUrl!,
+            attachmentUrls: attachmentUrls!,
             receiver_id,
             replyingTo
         });
