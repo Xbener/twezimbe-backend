@@ -239,11 +239,6 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 path: "$created_by",
                 preserveNullAndEmptyArrays: true // In case there's no matching user
             }
-        },{
-            $unwind: {
-                path: "$members",
-                preserveNullAndEmptyArrays: true // In case there's no matching user
-            }
         }, {
             $unwind: {
                 path: "$role",
