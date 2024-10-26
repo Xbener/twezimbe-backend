@@ -298,6 +298,8 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
         }
     }
 
+    finalChannel.members = finalChannel.members.map((member: any) => member.user_id)
+
     res.status(200).json({
         status: true,
         channel: finalChannel
