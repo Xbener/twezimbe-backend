@@ -1,5 +1,5 @@
 import { Document, model, Schema } from "mongoose";
-
+import UserSettings from '../model/user_settings.model'
 const default_profile_pic = "https://res.cloudinary.com/djehh7gum/image/upload/v1729056803/k6eviapycaxss3e12v5e.png";
 
 export interface UserDoc extends Document {
@@ -183,6 +183,26 @@ UserSchema.path('securityQuestions').default([
     { question: "What was the name of your first pet?", answer: "" },
     { question: "What is the name of the street you grew up on?", answer: "" }
 ]);
+
+UserSchema.post('save', async function (doc) {
+    if (doc.isNew) { // Only create settings for new users
+        try {
+            await UserSettings.create({
+                userId: doc._id,
+                notificationSettings: {
+                    chatroomsMuted: [],
+                    notifyOnMention: true,
+                    notifyOnDirectMessage: true,
+                    notifyOnReaction: false,
+                    notifyOnOtherEvents: false
+                }
+            });
+        } catch (error) {
+            console.error("Error creating user settings:", error);
+        }
+    }
+});
+
 
 const User = model<UserDoc>("User", UserSchema);
 export default User;
