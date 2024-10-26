@@ -239,6 +239,11 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 path: "$created_by",
                 preserveNullAndEmptyArrays: true // In case there's no matching user
             }
+        },{
+            $unwind: {
+                path: "$members",
+                preserveNullAndEmptyArrays: true // In case there's no matching user
+            }
         }, {
             $unwind: {
                 path: "$role",
@@ -252,6 +257,12 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 localField: "members.user_id", // members.user_id contains the IDs of the users
                 foreignField: "_id", // _id in the users collection
                 as: "membersDetails" // Populate membersDetails with user data
+            }
+        },
+        {
+            // Combine role information into membersDetails
+            $addFields: {
+                "membersDetails.role": "$role" // Add role to each member's details
             }
         },
         {
