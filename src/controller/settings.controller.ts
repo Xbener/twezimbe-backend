@@ -36,7 +36,8 @@ export const updatedUserSettings = asyncWrapper(async (req, res) => {
     if (!updatedUserSettings) return res.status(404).json({ errors: "Channel settings not found" });
 
     res.status(201).json({
-        status: true
+        status: true,
+        userSettings: updatedUserSettings
     })
 })
 
