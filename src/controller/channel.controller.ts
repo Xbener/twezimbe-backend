@@ -374,3 +374,26 @@ export const deleteChannel = asyncWrapper(async (req: Request, res: Response) =>
         status: true
     })
 })
+
+
+export const updateChannelUserRole = asyncWrapper(async (req, res, next) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+
+    const { role_name, user_id, channel_id } = req.body
+
+    if (!role_name || !user_id || !channel_id) return res.status(400).json({ errors: "invalid request" })
+
+    const newRole = await Role.findOne({ role_name })
+    const updatedUserChannel = await UserChannel.findOneAndUpdate({ user_id, channel_id }, {
+        $set: {
+            role_id: newRole?._id
+        }
+    }, { new: true })
+
+    if (!updatedUserChannel) return res.status(500).json({ status: false, errors: "Unable to update user role" })
+
+    res.status(200).json({
+        status: true
+    })
+})
