@@ -87,23 +87,37 @@ export const getMessagesForChatroom = async (req: Request, res: Response) => {
 };
 
 
-
 export const uploadMessagePictures = asyncWrapper(async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
-    const attachmentUrls: string[] = [];
+    const attachmentUrls: { url: string, type: string, name: string }[] = [];
 
-    // Ensure req.files is of type File[]
+    // Check if req.files is an array of files
     if (req.files && Array.isArray(req.files)) {
         for (const file of req.files) {
-            // Assuming file is of type Express.Multer.File or similar
-            const uploadResult = await cloudinary.uploader.upload(file.path);
-            attachmentUrls.push(uploadResult.secure_url);
+            try {
+
+                // Upload the file to Cloudinary
+                const uploadResult = await cloudinary.uploader.upload(file.path, {
+                    resource_type: 'auto'  // This enables support for all file types
+                });
+                attachmentUrls.push({
+                    url: uploadResult.secure_url,
+                    type: file.mimetype,
+                    name: file.originalname
+                });
+            } catch (error) {
+                console.error(`Failed to upload file ${file.originalname}:`, error);
+            }
         }
     }
-    if (!attachmentUrls.length) return res.status(500).json({ status: false, errors: "Unable to upload files" })
-    // Return the attachment URLs or handle them as needed
+
+    if (!attachmentUrls.length) {
+        return res.status(500).json({ status: false, errors: "Unable to upload any files" });
+    }
+
+    // Return the attachment URLs
     return res.status(200).json({ status: true, attachmentUrls });
 });
 

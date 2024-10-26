@@ -6,7 +6,11 @@ const MessageSchema = new Schema({
     chatroom: { type: Schema.Types.ObjectId, ref: 'ChatRoom', required: true },
     content: { type: String, required: false, default: "" },
     messageType: { type: String, enum: ['text', 'image', 'video', 'sticker', 'gif'], default: 'text' },
-    attachmentUrls: [{ type: String }],
+    attachmentUrls: [{
+        type: { type: String, required: true },
+        url: { type: String, required: true },
+        name:{type:String,required:true}
+    }],
     read: { type: Boolean, default: false },
     status: { type: String, enum: ['sent', 'delivered', 'seen'], default: 'sent' },
     reactions: [
