@@ -109,6 +109,13 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
                 foreignField: "ref",
                 as: "chatroom"
             }
+        },{
+            $lookup: {
+                from: "roles",
+                localField: "role_id",
+                foreignField: "_id",
+                as: "role"
+            }
         },
         {
             $unwind: {
@@ -125,6 +132,11 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
         {
             $unwind: {
                 path: '$user',
+                preserveNullAndEmptyArrays: true
+            }
+        }, {
+            $unwind: {
+                path: '$role',
                 preserveNullAndEmptyArrays: true
             }
         },
@@ -150,7 +162,8 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
                 created_by: "$channel.created_by",
                 createdAt: "$channel.createdAt",
                 updatedAt: "$channel.updatedAt",
-                chatroom: "$chatroom"
+                chatroom: "$chatroom",
+                role: "$role",
             }
         }
     ]);
@@ -199,6 +212,13 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 foreignField: "channel_id",
                 as: "members"
             }
+        },{
+            $lookup: {
+                from: "roles",
+                localField: "members.role_id",
+                foreignField: "_id",
+                as: "role"
+            }
         },
         {
             $unwind: {
@@ -217,6 +237,11 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
         {
             $unwind: {
                 path: "$created_by",
+                preserveNullAndEmptyArrays: true // In case there's no matching user
+            }
+        }, {
+            $unwind: {
+                path: "$role",
                 preserveNullAndEmptyArrays: true // In case there's no matching user
             }
         },
@@ -241,7 +266,9 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 updatedAt: { $first: "$updatedAt" },
                 members: { $first: "$members.user_id" }, // Keep member IDs
                 membersDetails: { $first: "$membersDetails" }, // Populate user data
-                groupId: { $first: "$groupId" }
+                groupId: { $first: "$groupId" },
+                role: { $first: "$role" },
+            
             }
         },
         // { $limit: 1 }
