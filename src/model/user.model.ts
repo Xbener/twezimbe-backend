@@ -53,7 +53,7 @@ export interface UserDoc extends Document {
     otpExpiryTime: Date;
     salt: string;
     _doc: UserDoc;
-    role: "User" | "Manager" | "Admin";
+    role: "User" | "Manager" | "Admin" | string;
     securityQuestions?: {
         question: string;
         answer: string;

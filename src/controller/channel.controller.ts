@@ -5,8 +5,28 @@ import { ValidateToken } from "../utils/password.utils";
 import UserChannel from '../model/user_channel.model'
 import Role from "../model/role.model";
 import chatroomModel from "../model/chatroom.model";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { UserDoc } from "../model/user.model";
+
+type Member = {
+    user_id: Types.ObjectId | string; // user_id type depends on your schema
+    role_id?: Types.ObjectId | string; // Add role_id if it exists in members
+};
+
+// Define ChannelType to match the channel structure
+type ChannelType = {
+    _id: Types.ObjectId | string;
+    name: string;
+    description?: string;
+    state: 'public' | 'private';
+    created_by: UserDoc;
+    chatroom?: object; // Define a more specific type if known
+    createdAt: Date;
+    updatedAt: Date;
+    groupId: Types.ObjectId | string;
+    members: Member[];
+    membersDetails: UserDoc[];
+};
 
 
 export const addChannel = asyncWrapper(async (req: Request, res: Response) => {
@@ -109,7 +129,7 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
                 foreignField: "ref",
                 as: "chatroom"
             }
-        },{
+        }, {
             $lookup: {
                 from: "roles",
                 localField: "role_id",
@@ -177,19 +197,19 @@ export const getGroupChannels = asyncWrapper(async (req: Request, res: Response)
 
 export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
-    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
-    console.log(req.body)
-    const { userId } = req.body
+    const { userId } = req.body;
     if (!userId) {
         return res.status(400).json({ errors: "User is required" });
     }
 
-    const isUserMember = await chatroomModel.findOne({ ref: req.params.channelId, members: { $in: [req.body.userId] } });
-
+    const isUserMember = await chatroomModel.findOne({ ref: req.params.channelId, members: { $in: [userId] } });
     if (!isUserMember) {
         return res.status(403).json({ status: false, errors: "You are not a member of this room" });
     }
+
+    // Fetch the channel with members and details
     let channel = await Channel.aggregate([
         {
             $match: {
@@ -214,17 +234,9 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
             }
         },
         {
-            $lookup: {
-                from: "roles",
-                localField: "members.role_id",
-                foreignField: "_id",
-                as: "roles" // Keep it as "roles" to avoid confusion
-            }
-        },
-        {
             $unwind: {
                 path: "$chatroom",
-                preserveNullAndEmptyArrays: true // In case there's no matching chatroom
+                preserveNullAndEmptyArrays: true
             }
         },
         {
@@ -238,54 +250,20 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
         {
             $unwind: {
                 path: "$created_by",
-                preserveNullAndEmptyArrays: true // In case there's no matching user
+                preserveNullAndEmptyArrays: true
             }
         },
         {
-            // Look up users based on member IDs
             $lookup: {
-                from: "users", // Join with the users collection
-                localField: "members.user_id", // members.user_id contains the IDs of the users
-                foreignField: "_id", // _id in the users collection
-                as: "membersDetails" // Populate membersDetails with user data
-            }
-        },
-        {
-            // Merge roles into the corresponding membersDetails
-            $unwind: {
-                path: "$members",
-                preserveNullAndEmptyArrays: true // In case there's no matching member
-            }
-        },
-        {
-            // Lookup the role for each member
-            $lookup: {
-                from: "roles",
-                localField: "members.role_id",
+                from: "users",
+                localField: "members.user_id",
                 foreignField: "_id",
-                as: "memberRole"
-            }
-        },
-        {
-            // Combine the member role into the corresponding membersDetails
-            $addFields: {
-                "membersDetails": {
-                    $map: {
-                        input: "$membersDetails",
-                        as: "member",
-                        in: {
-                            $mergeObjects: [
-                                "$$member",
-                                { role: { $arrayElemAt: ["$memberRole", 0] } } // Add role to each member
-                            ]
-                        }
-                    }
-                }
+                as: "membersDetails"
             }
         },
         {
             $group: {
-                _id: "$_id", // _id is required in the $group stage
+                _id: "$_id",
                 name: { $first: "$name" },
                 description: { $first: "$description" },
                 state: { $first: "$state" },
@@ -293,24 +271,38 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 chatroom: { $first: "$chatroom" },
                 createdAt: { $first: "$createdAt" },
                 updatedAt: { $first: "$updatedAt" },
-                members: { $push: "$members.user_id" }, // Store only member IDs
-                membersDetails: { $first: "$membersDetails" }, // Keep membersDetails as is
-                groupId: { $first: "$groupId" },
+                members: { $first: "$members" },
+                membersDetails: { $first: "$membersDetails" },
+                groupId: { $first: "$groupId" }
             }
-        }
+        },
+        { $limit: 1 }
     ]);
 
+    if (!channel || channel.length === 0) {
+        return res.status(404).json({ errors: "Channel not found" });
+    }
 
-
-    if (!channel) return res.status(404).json({ errors: "Channel not found" })
-    channel = channel.length > 0 ? channel[0] : null;
+    const finalChannel: any = channel[0]
+    // Fetch and assign each member's role
+    for (const member of finalChannel.membersDetails) {
+        const userChannel = finalChannel.members.find((m: any) => m.user_id.toString() === member._id.toString());
+        if (userChannel && userChannel.role_id) {
+            const role = await Role.findById(userChannel.role_id);
+            if (role) {
+                member.role = {
+                    role_name: role.role_name,
+                    role_id: role._id
+                };  // Add role information to each member
+            }
+        }
+    }
 
     res.status(200).json({
         status: true,
-        channel
-    })
-})
-
+        channel: finalChannel
+    });
+});
 
 export const addMemberToPrivateChannel = asyncWrapper(async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
