@@ -212,12 +212,13 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 foreignField: "channel_id",
                 as: "members"
             }
-        },{
+        },
+        {
             $lookup: {
                 from: "roles",
                 localField: "members.role_id",
                 foreignField: "_id",
-                as: "role"
+                as: "roles" // Keep it as "roles" to avoid confusion
             }
         },
         {
@@ -239,14 +240,9 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 path: "$created_by",
                 preserveNullAndEmptyArrays: true // In case there's no matching user
             }
-        }, {
-            $unwind: {
-                path: "$role",
-                preserveNullAndEmptyArrays: true // In case there's no matching user
-            }
         },
-        // Join users with members to get user details
         {
+            // Look up users based on member IDs
             $lookup: {
                 from: "users", // Join with the users collection
                 localField: "members.user_id", // members.user_id contains the IDs of the users
@@ -255,9 +251,36 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
             }
         },
         {
-            // Combine role information into membersDetails
+            // Merge roles into the corresponding membersDetails
+            $unwind: {
+                path: "$members",
+                preserveNullAndEmptyArrays: true // In case there's no matching member
+            }
+        },
+        {
+            // Lookup the role for each member
+            $lookup: {
+                from: "roles",
+                localField: "members.role_id",
+                foreignField: "_id",
+                as: "memberRole"
+            }
+        },
+        {
+            // Combine the member role into the corresponding membersDetails
             $addFields: {
-                "membersDetails.role": "$role" // Add role to each member's details
+                "membersDetails": {
+                    $map: {
+                        input: "$membersDetails",
+                        as: "member",
+                        in: {
+                            $mergeObjects: [
+                                "$$member",
+                                { role: { $arrayElemAt: ["$memberRole", 0] } } // Add role to each member
+                            ]
+                        }
+                    }
+                }
             }
         },
         {
@@ -270,15 +293,14 @@ export const getSingleGroupChannel = asyncWrapper(async (req: Request, res: Resp
                 chatroom: { $first: "$chatroom" },
                 createdAt: { $first: "$createdAt" },
                 updatedAt: { $first: "$updatedAt" },
-                members: { $first: "$members.user_id" }, // Keep member IDs
-                membersDetails: { $first: "$membersDetails" }, // Populate user data
+                members: { $push: "$members.user_id" }, // Store only member IDs
+                membersDetails: { $first: "$membersDetails" }, // Keep membersDetails as is
                 groupId: { $first: "$groupId" },
-                role: { $first: "$role" },
-            
             }
-        },
-        // { $limit: 1 }
+        }
     ]);
+
+
 
     if (!channel) return res.status(404).json({ errors: "Channel not found" })
     channel = channel.length > 0 ? channel[0] : null;
