@@ -5,6 +5,7 @@ const UserSettingsSchema = new Schema({
 
     notificationSettings: {
         chatroomsMuted: [{ type: Schema.Types.ObjectId, ref: 'chatrooms' }], // Array of chatrooms user has muted
+        chatroomsBlocked: [{ type: Schema.Types.ObjectId, ref: 'chatrooms' }], // Array of chatrooms user has muted
         notifyOnMention: { type: Boolean, default: true },                   // Enable or disable notifications for mentions
         notifyOnDirectMessage: { type: Boolean, default: true },             // Enable or disable notifications for direct messages
         notifyOnReaction: { type: Boolean, default: false },                 // Enable or disable notifications for reactions (e.g., likes)
