@@ -28,6 +28,7 @@ const RoleSchema = new Schema({
     group_picture: { type: String, required: true, default: default_group_pic },
     upgraded: { type: Boolean, default: false, required: true },
     isSacco: { type: Boolean, default: false, required: true },
+    has_bf: { type: Boolean, default: false, required: true },
     memberCount: { type: Number, required: true, default: 1 },
     created_by: {
         type: ObjectId,

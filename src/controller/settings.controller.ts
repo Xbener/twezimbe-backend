@@ -45,7 +45,7 @@ export const getUserSettings = asyncWrapper(async (req, res) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
-    const userSettings = await UserSettings.findOne({ userId: req.params.userId })
+    const userSettings = await UserSettings.findOne({ userId: req.user?._id || req.params.userId })
 
     res.status(200).json({
         status: true,
