@@ -1,7 +1,10 @@
+import { Request, Response } from 'express';
 import asyncWrapper from '../middlewares/AsyncWrapper'
 import ChannelSettings from '../model/channel_settings.model'
 import UserSettings from '../model/user_settings.model';
+import BfSettings from '../model/bf_settings.model'
 import { ValidateToken } from '../utils/password.utils';
+import mongoose from 'mongoose';
 
 export const updatedChannelSettings = asyncWrapper(async (req, res) => {
     const isTokenValid = await ValidateToken(req);
@@ -51,4 +54,56 @@ export const getUserSettings = asyncWrapper(async (req, res) => {
         status: true,
         userSettings
     })
+})
+
+
+export const getBfSettings = asyncWrapper(async (req: Request, res: Response) => {
+    try {
+        const { bf_id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(bf_id)) {
+            return res.status(400).json({ message: 'Invalid bf_id' });
+        }
+
+        const bfSettings = await BfSettings.findOne({ bf_id });
+
+        if (!bfSettings) {
+            return res.status(404).json({ message: 'Bf settings not found' });
+        }
+
+        res.status(200).json({
+            status: true,
+            settings: bfSettings
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to retrieve Bf settings', error });
+    }
+})
+
+
+export const updateBfSettings = asyncWrapper(async (req: Request, res: Response) => {
+    try {
+        const { bf_id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(bf_id)) {
+            return res.status(400).json({ message: 'Invalid bf_id' });
+        }
+
+        const updatedBfSettings = await BfSettings.findOneAndUpdate(
+            { bf_id },
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedBfSettings) {
+            return res.status(404).json({ message: 'Bf settings not found' });
+        }
+
+        res.status(200).json({
+            status: true,
+            settings: updatedBfSettings
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to update Bf settings', error });
+    }
 })

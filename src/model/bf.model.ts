@@ -1,4 +1,5 @@
 import mongoose, { Schema, model, Document } from 'mongoose';
+import BfSettings from '../model/bf_settings.model';
 
 interface IBf extends Document {
     fundName: string;
@@ -52,6 +53,21 @@ const BfSchema = new Schema<IBf>(
         timestamps: true,
     }
 );
+
+// Post-save hook to create a default Bf_settings document
+BfSchema.post('save', async function (doc, next) {
+    try {
+        const bfSettings = new BfSettings({
+            bf_id: doc._id,
+            max_beneficiaries: 5,
+            min_beneficiaries: 1,
+        });
+        await bfSettings.save();
+        next();
+    } catch (error) {
+        console.log('error creating bf settings', error)
+    }
+});
 
 const Bf = model<IBf>('Bf', BfSchema);
 
