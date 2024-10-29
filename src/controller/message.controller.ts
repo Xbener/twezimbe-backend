@@ -7,6 +7,7 @@ import readreceiptsModel from '../model/readreceipts.model';
 import Group, { GroupDoc } from '../model/group.model'
 import channelModel from '../model/channel.model';
 import { v2 as cloudinary } from 'cloudinary'
+import fs from 'fs'
 
 // Controller to get all messages for a specific chatroom
 export const getMessagesForChatroom = async (req: Request, res: Response) => {
@@ -106,6 +107,12 @@ export const uploadMessagePictures = asyncWrapper(async (req: Request, res: Resp
                     url: uploadResult.secure_url,
                     type: file.mimetype,
                     name: file.originalname
+                });
+
+                fs.unlink(file.path, (err) => {
+                    if (err) {
+                        console.error('Error deleting file:', err);
+                    }
                 });
             } catch (error) {
                 console.error(`Failed to upload file ${file.originalname}:`, error);
