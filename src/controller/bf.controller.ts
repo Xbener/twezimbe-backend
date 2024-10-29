@@ -61,7 +61,10 @@ export const getGroupBf = asyncWrapper(async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Bereavement fund not found for this group" });
         }
 
-        res.status(200).json(fund);
+        res.status(200).json({
+            status:true,
+            bf: fund
+        });
     } catch (error) {
         console.error("Error fetching fund:", error);
         res.status(500).json({ error: "Error fetching fund" });
