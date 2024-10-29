@@ -3,12 +3,14 @@ import { getBfSettings, getChannelSettings, getUserSettings, updateBfSettings, u
 
 const router = Router()
 
+
+router.get('/bf/:bf_id', getBfSettings);
+router.put('/bf/:bf_id', updateBfSettings);
 router.put('/channel/:settingsId', updatedChannelSettings)
 router.get('/channel/:channelId', getChannelSettings)
 router.put('/user/:settingsId', updatedUserSettings)
 router.get('/user/:userId', getUserSettings)
 
-router.get('/bf-settings/:bf_id', getBfSettings);
-router.put('/bf-settings/:bf_id', updateBfSettings);
+
 
 export default router
