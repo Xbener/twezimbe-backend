@@ -385,6 +385,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 invite_link: { $first: "$invite_link" },
                 upgraded: { $first: "$upgraded" },
                 isSacco: { $first: "$isSacco" },
+                has_bf: { $first: "$has_bf" },
                 created_by: { $first: '$created_by' },
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
