@@ -180,6 +180,7 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         description: '$description',
                         upgraded: '$upgraded', // Access directly
                         isSacco: '$isSacco', // Access directly
+                        has_bf: '$has_bf', // Access directly
                         tags: '$tags',
                         created_by: '$createdByDetails.name',
                         del_flag: '$del_flag',
@@ -260,6 +261,7 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
                         tags: { $first: '$groupDetails.tags' },
                         upgraded: { $first: "$upgraded" },
                         isSacco: { $first: "$isSacco" },
+                        has_bf: { $first: "$has_bf" },
                         created_by: { $first: '$groupDetails.created_by' },
                         del_flag: { $first: '$groupDetails.del_flag' },
                         createdAt: { $first: '$groupDetails.createdAt' },
@@ -359,6 +361,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 invite_link: { $first: "$invite_link" },
                 upgraded: { $first: "$upgraded" },
                 isSacco: { $first: "$isSacco" },
+                has_bf: { $first: "$has_bf" },
                 created_by: { $first: '$created_by' },
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
