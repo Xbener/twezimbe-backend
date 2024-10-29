@@ -10,6 +10,7 @@ import channelRouter from '../routes/channel.routes';
 import messageRouter from '../routes/message.route'
 import chatroomRouter from '../routes/chatroom.routes'
 import settingsRouter from '../routes/settings.route'
+import BfRouter from '../routes/bf.routes'
 
 
 export default async (app: Application) => {
@@ -39,6 +40,7 @@ export default async (app: Application) => {
     app.use('/api/v1/messages', messageRouter)
     app.use('/api/v1/chatrooms', chatroomRouter)
     app.use('/api/v1/settings', settingsRouter)
+    app.use('/api/v1/bf', BfRouter)
 
     app.use(ErrorHandlerMiddleware);
 
