@@ -5,6 +5,9 @@ import { ValidateToken } from '../utils/password.utils';
 import asyncWrapper from '../middlewares/AsyncWrapper';
 import user_bfModel from '../model/user_bf.model';
 import mongoose from 'mongoose';
+import { sendEmail } from '../utils/notification.utils';
+import User from '../model/user.model'
+import bf_requestsModel from './bf_requests.model';
 
 
 export const createBf = asyncWrapper(async (req: Request, res: Response) => {
@@ -149,6 +152,10 @@ export const updateBfUser = asyncWrapper(async (req, res) => {
 
 export const addNewBfMember = asyncWrapper(async (req, res) => {
 
+    const user = await User.findOne({ _id: req.body.userId })
+    if (!user) return res.status(404).json({ status: false, message: "User not found" })
+    const bf = await Bf.findById(req.body.bf_id)
+    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
     const bfMemberExists = await user_bfModel.findOne({ bf_id: req.body.bf_id, userId: req.body.userId })
     if (bfMemberExists) return res.status(409).json({ status: false, message: "user is already a member" })
     const newBfMember = await user_bfModel.create({
@@ -157,9 +164,31 @@ export const addNewBfMember = asyncWrapper(async (req, res) => {
         role: req.body.role || 'principal'
     })
 
+    sendEmail(`${user?.email}`, "You were added to a Bearevement Fund", `Hello. Admins of ${bf?.fundName} has added you as as ${req.body.role} for the Fund`)
     res.status(201).json({
         message: "member added successfully",
         bfMember: newBfMember,
         status: true
+    })
+})
+
+export const applyToJoinBF = asyncWrapper(async (req, res) => {
+    const user = await User.findOne({ _id: req.body.userId })
+    if (!user) return res.status(404).json({ status: false, message: "User not found" })
+    const bf = await Bf.findById(req.body.bf_id)
+    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    const bfMemberExists = await user_bfModel.findOne({ bf_id: req.body.bf_id, userId: req.body.userId })
+    if (bfMemberExists) return res.status(409).json({ status: false, message: "user is already a member" })
+
+    const requestExists = await bf_requestsModel.findOne({ bf_id: req.body.bf_id, user_id: req.body.userId })
+    if (requestExists) return res.status(409).json({ status: false, message: "Request was already sent to the admins. Please wait for approval" })
+    const newRequest = await bf_requestsModel.create({
+        user_id: req.body.userId,
+        bf_id: req.body.bf_id
+    })
+
+    res.status(201).json({
+        status: true,
+        message: "Request sent successfully to the admins. Please patiently wait for the approval"
     })
 })
