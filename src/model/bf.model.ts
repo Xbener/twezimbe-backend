@@ -1,5 +1,6 @@
 import mongoose, { Schema, model, Document } from 'mongoose';
 import BfSettings from '../model/bf_settings.model';
+import BfUser from '../model/user_bf.model';
 
 interface IBf extends Document {
     fundName: string;
@@ -53,6 +54,22 @@ const BfSchema = new Schema<IBf>(
         timestamps: true,
     }
 );
+
+BfSchema.post('save', async (doc, next) => {
+
+    try {
+        const bfUser = new BfUser({
+            userId: doc.createdBy,
+            bf_id: doc._id,
+            role: "admin"
+        })
+
+        await bfUser.save();
+        next();
+    } catch (error) {
+        console.log('error creating bf admin', error)
+    }
+})
 
 // Post-save hook to create a default Bf_settings document
 BfSchema.post('save', async function (doc, next) {
