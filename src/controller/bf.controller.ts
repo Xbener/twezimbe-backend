@@ -145,3 +145,18 @@ export const updateBfUser = asyncWrapper(async (req, res) => {
         bf_user: updatedBfUser
     })
 })
+
+
+export const addNewBfMember = asyncWrapper(async (req, res) => {
+
+    const newBfMember = await user_bfModel.create({
+        bf_id: req.body.bf_id,
+        user_id: req.body.userId,
+        role: req.body.role || 'principal'
+    })
+
+    res.status(201).json({
+        message:"member added successfully",
+        bfMember: newBfMember
+    })
+})
