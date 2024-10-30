@@ -206,10 +206,10 @@ export const getBfJoinRequests = asyncWrapper(async (req, res) => {
         },
         {
             $lookup: {
-                from :"users", 
+                from: "users",
                 localField: "user_id",
                 foreignField: "_id",
-                as :"user"
+                as: "user"
             }
         },
         {
@@ -222,15 +222,62 @@ export const getBfJoinRequests = asyncWrapper(async (req, res) => {
             $project: {
                 _id: 1,
                 user: "$user",
-                bf_id: 1 
+                bf_id: 1
             }
         }
     ])
 
     res.status(200).json({
-        status:true,
+        status: true,
         requests
     })
 })
 
+export const acceptBfJoinRequest = asyncWrapper(async (req, res) => {
+    const { userId, bf_id, requestId } = req.body
+    const user = await User.findOne({ _id: req.body.userId })
+    if (!user) return res.status(404).json({ status: false, message: "User not found" })
+    const bf = await Bf.findById(req.body.bf_id)
+    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    const bfMemberExists = await user_bfModel.findOne({ bf_id: req.body.bf_id, userId: req.body.userId })
+    if (bfMemberExists) return res.status(409).json({ status: false, message: "user is already a member" })
 
+    const requestExists = await bf_requestsModel.findById(requestId)
+    if (!requestExists) return res.status(404).json({ status: false, message: "request was not found on the server" })
+
+    const newBfMember = await user_bfModel.create({
+        bf_id,
+        userId,
+        role: 'principal',
+
+    })
+
+    await bf_requestsModel.findOneAndDelete({ _id: requestId })
+    sendEmail(`${user?.email}`, "Request Accepted", `admins of ${bf?.fundName} has accepted your request to join the fund`)
+    res.status(201).json({
+        status: true,
+        message: "Request accepted successfully"
+    })
+
+})
+
+export const declineRequest = asyncWrapper(async (req, res) => {
+
+    const { requestId } = req.params
+
+    const requestExists = await bf_requestsModel.findById(requestId)
+    if (!requestExists) return res.status(404).json({ status: false, message: "request was not found on the server" })
+
+    const user = await User.findOne({ _id: requestExists.user_id })
+    if (!user) return res.status(404).json({ status: false, message: "User not found" })
+    const bf = await Bf.findById(requestExists.bf_id)
+    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+
+    await bf_requestsModel.findOneAndDelete({ _id: requestId })
+
+    sendEmail(`${user?.email}`, "Request Accepted", `admins of ${bf?.fundName} has accepted your request to join the fund`)
+    res.status(200).json({
+        status: true,
+        message: "Request declined successfully"
+    })
+})
