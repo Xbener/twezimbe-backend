@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import { sendEmail } from '../utils/notification.utils';
 import User from '../model/user.model'
 import bf_requestsModel from './bf_requests.model';
+import beneficiaryModel from '../model/beneficiary.model';
 
 
 export const createBf = asyncWrapper(async (req: Request, res: Response) => {
@@ -279,5 +280,52 @@ export const declineRequest = asyncWrapper(async (req, res) => {
     res.status(200).json({
         status: true,
         message: "Request declined successfully"
+    })
+})
+
+
+export const addBeneficiary = asyncWrapper(async (req, res) => {
+    const user = await User.findById(req.body.userId)
+    if (!user) return res.status(404).json({ status: false, message: "User not found" })
+    const principal = await User.findById(req.body.principalId)
+    if (!principal) return res.status(404).json({ status: false, message: "Principal not found" })
+    const bf = await Bf.findById(req.body.bfId)
+    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+
+    const newBeneficiary = await beneficiaryModel.create(req.body)
+
+    sendEmail(`${user?.email}`, "Invited to become a beneficiary", `Hello. you have been added as a beneficiary for ${principal?.lastName} ${principal.firstName} in ${bf.fundName}`)
+    res.status(201).json({
+        message: "Beneficiary added successfully",
+        beneficiary: newBeneficiary
+    })
+})
+
+export const getPrincipalBeneficiary = asyncWrapper(async (req, res) => {
+    const principal = await User.findById(req.params.principalId)
+    if (!principal) return res.status(404).json({ status: false, message: "Principal not found" })
+    const bf = await Bf.findById(req.params.bfId)
+    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+
+    const beneficiaries = await beneficiaryModel.aggregate([
+        {
+            $match: {
+                principalId: new mongoose.Types.ObjectId(req.body.principalId),
+                bfId: new mongoose.Types.ObjectId(req.body.bfId)
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: "userId",
+                foreignField: "_id",
+                as: "beneficiary"
+            }
+        }
+    ])
+
+    res.status(200).json({
+        status: true,
+        beneficiaries
     })
 })
