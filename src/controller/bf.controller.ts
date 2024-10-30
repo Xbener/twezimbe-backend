@@ -149,14 +149,16 @@ export const updateBfUser = asyncWrapper(async (req, res) => {
 
 export const addNewBfMember = asyncWrapper(async (req, res) => {
 
+    const bfMemberExists = await user_bfModel.findOne({ bf_id: req.body.bf_id, userId: req.body.userId })
+    if (bfMemberExists) return res.status(409).json({ message: "user is already a member" })
     const newBfMember = await user_bfModel.create({
         bf_id: req.body.bf_id,
-        user_id: req.body.userId,
+        userId: req.body.userId,
         role: req.body.role || 'principal'
     })
 
     res.status(201).json({
-        message:"member added successfully",
+        message: "member added successfully",
         bfMember: newBfMember
     })
 })
