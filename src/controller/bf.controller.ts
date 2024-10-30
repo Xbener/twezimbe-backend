@@ -192,3 +192,45 @@ export const applyToJoinBF = asyncWrapper(async (req, res) => {
         message: "Request sent successfully to the admins. Please patiently wait for the approval"
     })
 })
+
+export const getBfJoinRequests = asyncWrapper(async (req, res) => {
+
+    const { bf_id } = req.params
+    const bf = await Bf.findById(bf_id)
+    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    const requests = await bf_requestsModel.aggregate([
+        {
+            $match: {
+                bf_id: new mongoose.Types.ObjectId(bf_id)
+            }
+        },
+        {
+            $lookup: {
+                from :"users", 
+                localField: "user_id",
+                foreignField: "_id",
+                as :"user"
+            }
+        },
+        {
+            $unwind: {
+                path: "$user",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                user: "$user",
+                bf_id: 1 
+            }
+        }
+    ])
+
+    res.status(200).json({
+        status:true,
+        requests
+    })
+})
+
+
