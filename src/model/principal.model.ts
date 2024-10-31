@@ -15,4 +15,4 @@ const principalSchema = new Schema({
     timestamps: true
 });
 
-export default model('PrincipalSchema', principalSchema);
+export default model('Principal', principalSchema);

@@ -145,6 +145,20 @@ export const updateBfUser = asyncWrapper(async (req, res) => {
     }
 
     const updatedBfUser = await user_bfModel.findOneAndUpdate({ userId: req.body.userId, bf_id: req.body.bf_id }, { ...req.body }, { new: true })
+        if(updatedBfUser?.role==='principal') {
+        await principalModel.create({
+            userId: req.body.userId,
+            bfId: req.body.bf_id,
+            contributionAmount: 0,
+            membershipFee: 0,
+            annualSubscription: 0,
+            selectedPlan: 'monthly',
+            paymentMethod: 'Mobile Money',
+            paymentDetails: '',
+            autoPayment: false,
+            dueReminder: 'week'
+        })
+    }
     res.status(200).json({
         status: true,
         bf_user: updatedBfUser
@@ -394,15 +408,17 @@ export const removeBeneficiary = asyncWrapper(async (req, res) => {
 
 
 export const updatePrincipalSettings = asyncWrapper(async (req, res) => {
-    const updatedPrincipal = await principalModel.findOneAndUpdate({ _id: req.params.principalId }, { ...req.body }, { new: true })
-    if (!updatedPrincipal) return res.status(200).json({
+    const updatedPrincipal = await principalModel.findOneAndUpdate({ userId: req.params.principalId }, { ...req.body }, { new: true })
+    if (!updatedPrincipal) res.status(404).json({status:false,message:"Principal not found"})
+        
+        return res.status(200).json({
         status: true,
         principal: updatedPrincipal
     })
 })
 
 export const getPrincipalSettings = asyncWrapper(async (req, res) => {
-    const principal = await principalModel.findById(req.params.principalId)
+    const principal = await principalModel.findOne({ userId: req.params.principalId })
     if (!principal) return res.status(404).json({ status: false, message: "Principal not found" })
     res.status(200).json({
         status: true,
