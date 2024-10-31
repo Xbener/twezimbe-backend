@@ -62,6 +62,7 @@ export interface UserDoc extends Document {
     is_complete: boolean;
     socketId?: string;
     userId: Schema.Types.ObjectId
+    active_status?: 'online' | 'offline' | 'do not disturb' | 'idle'
 }
 
 const UserSchema = new Schema<UserDoc>({
@@ -149,6 +150,7 @@ const UserSchema = new Schema<UserDoc>({
     otp: { type: Number, required: true },
     otpExpiryTime: { type: Date, required: true },
     salt: { type: String, required: false },
+    active_status: { type: String, enum: ['online', 'offline', 'do not disturb', 'idle'], default: 'online' },
     role: {
         type: String,
         enum: ["User", "Manager", "Admin"],

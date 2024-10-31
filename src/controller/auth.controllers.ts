@@ -369,3 +369,17 @@ export const getAllUsers = asyncWrapper(async (req: Request, res: Response) => {
     const users = await UserModel.find({ _id: { $ne: req?.user?._id } });
     return res.status(200).json({ status: true, users })
 })
+
+export const updateActiveStatus = asyncWrapper(async (req, res) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+
+    await UserModel.findByIdAndUpdate(req.body.userId, { $set: { active_status: req.body.status } })
+    res.status(200).json({
+        status: true,
+        activeStatus: req.body.status
+    })
+
+})

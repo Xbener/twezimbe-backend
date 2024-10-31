@@ -25,6 +25,17 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
             io.emit('user-logged-in', { user, onlineUsers });
         });
 
+        socket.on('user-active-status-change', ({ userId, status }) => {
+            const changedOnlineUsers = onlineUsers.map((onlineUser) => {
+                if (`${onlineUser?._id}` === `${userId}`) {
+                    return { ...onlineUser, active_status: status }
+                }
+                else {
+                    return onlineUser
+                }
+            })
+            io.emit('new-online-users', changedOnlineUsers)
+        })
         socket.on('join-chat-rooms', (chatroomIds: []) => {
             console.log('chatroomId', chatroomIds)
             chatroomIds.map(async (chatroomId: string) => {
@@ -35,7 +46,7 @@ export default async (io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEven
 
         // Send message to specific chatroom
         socket.on('new-message', ({ sender, receiver, sentTo, message, chatroomId }) => {
-            
+
             if (Array.isArray(receiver)) {
                 receiver.forEach((receiverId) => {
                     const socketId = findSocketId(receiverId.user_id || receiverId)?.socketId;

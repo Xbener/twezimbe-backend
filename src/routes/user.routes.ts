@@ -1,10 +1,11 @@
 import express from 'express';
-import { forgotPassword, getAllUsers, generate2FASecret, getUserProfile, regenerateOTP, resetPassword, signIn, signUp, updateAccount, uploadProfilePicture, verify2FAToken, verifyOTP, verifyToken } from '../controller';
+import { forgotPassword, getAllUsers, generate2FASecret, getUserProfile, regenerateOTP, resetPassword, signIn, signUp, updateAccount, uploadProfilePicture, verify2FAToken, verifyOTP, verifyToken, updateActiveStatus } from '../controller';
 import { validateEmail, validateOTP, validatePasswordReset, validateUpdateUserInfo, validateUserSignIn, validateUserSignUp } from '../utils/userValidation';
 import passport from 'passport';
 import { upload } from '../utils/multer';
 const userRouter = express.Router();
 
+userRouter.post('/status', updateActiveStatus)
 userRouter.post('/signup', validateUserSignUp, signUp);
 userRouter.post('/signin', validateUserSignIn, signIn);
 userRouter.get('/user', getUserProfile);
