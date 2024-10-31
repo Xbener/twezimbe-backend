@@ -47,7 +47,7 @@ export const ValidatePassword = async (enteredPassword: string, savedPassword: s
  * @returns signature string of text (a jwt token)
  */
 export const GenerateToken = async (payload: UserPayload) => {
-    return jwt.sign(payload, SECRET_KEY as string, { expiresIn: "1d" }) // Other possible time of expiration formats are: 30m, 1h, 1d,...
+    return jwt.sign(payload, SECRET_KEY as string, { expiresIn: "7d" }) // Other possible time of expiration formats are: 30m, 1h, 1d,...
 };
 
 /**

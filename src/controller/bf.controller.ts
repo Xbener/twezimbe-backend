@@ -9,6 +9,7 @@ import { sendEmail } from '../utils/notification.utils';
 import User from '../model/user.model'
 import bf_requestsModel from './bf_requests.model';
 import beneficiaryModel from '../model/beneficiary.model';
+import principalModel from '../model/principal.model';
 
 
 export const createBf = asyncWrapper(async (req: Request, res: Response) => {
@@ -165,6 +166,21 @@ export const addNewBfMember = asyncWrapper(async (req, res) => {
         role: req.body.role || 'principal'
     })
 
+    if(newBfMember.role==='principal') {
+        await principalModel.create({
+            userId: req.body.userId,
+            bfId: req.body.bf_id,
+            contributionAmount: 0,
+            membershipFee: 0,
+            annualSubscription: 0,
+            selectedPlan: 'monthly',
+            paymentMethod: 'Mobile Money',
+            paymentDetails: '',
+            autoPayment: false,
+            dueReminder: 'week'
+        })
+    }
+
     sendEmail(`${user?.email}`, "You were added to a Bearevement Fund", `Hello. Admins of ${bf?.fundName} has added you as as ${req.body.role} for the Fund`)
     res.status(201).json({
         message: "member added successfully",
@@ -252,7 +268,18 @@ export const acceptBfJoinRequest = asyncWrapper(async (req, res) => {
         role: 'principal',
 
     })
-
+    await principalModel.create({
+        userId,
+        bfId: bf_id,
+        contributionAmount: 0,
+        membershipFee: 0,
+        annualSubscription: 0,
+        selectedPlan: 'monthly',
+        paymentMethod: 'Mobile Money',
+        paymentDetails: '',
+        autoPayment: false,
+        dueReminder: 'week'
+    })
     await bf_requestsModel.findOneAndDelete({ _id: requestId })
     sendEmail(`${user?.email}`, "Request Accepted", `admins of ${bf?.fundName} has accepted your request to join the fund`)
     res.status(201).json({
@@ -294,12 +321,12 @@ export const addBeneficiary = asyncWrapper(async (req, res) => {
     if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
 
     const beneficiaryExists = await beneficiaryModel.findOne(req.body)
-    if(beneficiaryExists) return res.status(409).json({status:false,message:"This user is already your beneficiary"})
+    if (beneficiaryExists) return res.status(409).json({ status: false, message: "This user is already your beneficiary" })
     const newBeneficiary = await beneficiaryModel.create(req.body)
 
     sendEmail(`${user?.email}`, "Invited to become a beneficiary", `Hello. you have been added as a beneficiary for ${principal?.lastName} ${principal.firstName} in ${bf.fundName}`)
     res.status(201).json({
-        status:true,
+        status: true,
         message: "Beneficiary added successfully",
         beneficiary: newBeneficiary
     })
@@ -355,12 +382,30 @@ export const getPrincipalBeneficiary = asyncWrapper(async (req, res) => {
 })
 
 
-export const removeBeneficiary = asyncWrapper(async(req,res)=>{
+export const removeBeneficiary = asyncWrapper(async (req, res) => {
     const removedUser = await beneficiaryModel.findOneAndDelete(req.body)
-    if(!removedUser) return res.status(500).json({status:false, message:"Failed to remove beneficiary. Please try again"})
+    if (!removedUser) return res.status(500).json({ status: false, message: "Failed to remove beneficiary. Please try again" })
     res.status(200).json({
 
-            status:true,
-            message:"Beneficiary removed successfully"
-            })
+        status: true,
+        message: "Beneficiary removed successfully"
+    })
+})
+
+
+export const updatePrincipalSettings = asyncWrapper(async (req, res) => {
+    const updatedPrincipal = await principalModel.findOneAndUpdate({ _id: req.params.principalId }, { ...req.body }, { new: true })
+    if (!updatedPrincipal) return res.status(200).json({
+        status: true,
+        principal: updatedPrincipal
+    })
+})
+
+export const getPrincipalSettings = asyncWrapper(async (req, res) => {
+    const principal = await principalModel.findById(req.params.principalId)
+    if (!principal) return res.status(404).json({ status: false, message: "Principal not found" })
+    res.status(200).json({
+        status: true,
+        principal
+    })
 })
