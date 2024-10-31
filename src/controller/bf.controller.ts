@@ -257,7 +257,8 @@ export const acceptBfJoinRequest = asyncWrapper(async (req, res) => {
     sendEmail(`${user?.email}`, "Request Accepted", `admins of ${bf?.fundName} has accepted your request to join the fund`)
     res.status(201).json({
         status: true,
-        message: "Request accepted successfully"
+        message: "Request accepted successfully",
+        newMember: newBfMember
     })
 
 })
@@ -351,4 +352,15 @@ export const getPrincipalBeneficiary = asyncWrapper(async (req, res) => {
         status: true,
         beneficiaries
     })
+})
+
+
+export const removeBeneficiary = asyncWrapper(async(req,res)=>{
+    const removedUser = await beneficiaryModel.findOneAndDelete(req.body)
+    if(!removedUser) return res.status(500).json({status:false, message:"Failed to remove beneficiary. Please try again"})
+    res.status(200).json({
+
+            status:true,
+            message:"Beneficiary removed successfully"
+            })
 })

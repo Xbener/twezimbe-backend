@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { acceptBfJoinRequest, addBeneficiary, addNewBfMember, applyToJoinBF, createBf, declineRequest, getBfJoinRequests, getBfMembers, getGroupBf, getPrincipalBeneficiary, updateBfUser } from "../controller/bf.controller";
+import { acceptBfJoinRequest, addBeneficiary, addNewBfMember, applyToJoinBF, createBf, declineRequest, getBfJoinRequests, getBfMembers, getGroupBf, getPrincipalBeneficiary, removeBeneficiary, updateBfUser } from "../controller/bf.controller";
 
 const router = Router()
 
+router.post('/beneficiary/remove', removeBeneficiary)
 router.post('/beneficiary', addBeneficiary)
 router.get('/beneficiary/:principalId/:bfId', getPrincipalBeneficiary)
 router.post('/requests/accept', acceptBfJoinRequest)
