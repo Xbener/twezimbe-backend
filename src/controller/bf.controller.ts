@@ -292,10 +292,13 @@ export const addBeneficiary = asyncWrapper(async (req, res) => {
     const bf = await Bf.findById(req.body.bfId)
     if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
 
+    const beneficiaryExists = await beneficiaryModel.findOne(req.body)
+    if(beneficiaryExists) return res.status(409).json({status:false,message:"This user is already your beneficiary"})
     const newBeneficiary = await beneficiaryModel.create(req.body)
 
     sendEmail(`${user?.email}`, "Invited to become a beneficiary", `Hello. you have been added as a beneficiary for ${principal?.lastName} ${principal.firstName} in ${bf.fundName}`)
     res.status(201).json({
+        status:true,
         message: "Beneficiary added successfully",
         beneficiary: newBeneficiary
     })
@@ -310,8 +313,8 @@ export const getPrincipalBeneficiary = asyncWrapper(async (req, res) => {
     const beneficiaries = await beneficiaryModel.aggregate([
         {
             $match: {
-                principalId: new mongoose.Types.ObjectId(req.body.principalId),
-                bfId: new mongoose.Types.ObjectId(req.body.bfId)
+                principalId: new mongoose.Types.ObjectId(req.params.principalId),
+                bfId: new mongoose.Types.ObjectId(req.params.bfId)
             }
         },
         {
@@ -320,6 +323,26 @@ export const getPrincipalBeneficiary = asyncWrapper(async (req, res) => {
                 localField: "userId",
                 foreignField: "_id",
                 as: "beneficiary"
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "principalId",
+                foreignField: "_id",
+                as: 'principal'
+            }
+        },
+        {
+            $unwind: {
+                path: "$beneficiary",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: "$principal",
+                preserveNullAndEmptyArrays: true
             }
         }
     ])
