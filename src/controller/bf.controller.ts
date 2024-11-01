@@ -77,7 +77,8 @@ export const getGroupBf = asyncWrapper(async (req: Request, res: Response) => {
     const { groupId } = req.params;
 
     try {
-        const fund = await Bf.findOne({ groupId }).populate('createdBy', 'firstName lastName');
+        const fund = await Bf.findOne({ groupId }).populate('createdBy', 'firstName lastName _id');
+        const fundUser = await user_bfModel.findOne({ userId: req?.user?._id, bf_id: fund?._id })
 
         if (!fund) {
             return res.status(404).json({ error: "Bereavement fund not found for this group" });
@@ -85,7 +86,7 @@ export const getGroupBf = asyncWrapper(async (req: Request, res: Response) => {
 
         res.status(200).json({
             status: true,
-            bf: fund
+            bf: { fund, role: fundUser?.role }
         });
     } catch (error) {
         console.error("Error fetching fund:", error);
@@ -155,12 +156,26 @@ export const updateBfUser = asyncWrapper(async (req, res) => {
         let newBfUser = await user_bfModel.create({
             userId: req.body.userId,
             bf_id: req.body.bf_id,
-            role: "principal"
+            role: ["principal"]
         })
     }
 
-    const updatedBfUser = await user_bfModel.findOneAndUpdate({ userId: req.body.userId, bf_id: req.body.bf_id }, { ...req.body }, { new: true })
-    if (updatedBfUser?.role === 'principal') {
+    const roles1 = bfUser?.role || [];
+    const roles2 = ['principal', 'principal'];
+
+    const arraysEqual = (arr1: string[], arr2: string[]) => {
+        if (arr1.length !== arr2.length) return false; // Check lengths
+        return arr1.every((value, index) => value === arr2[index]); // Check each element
+    };
+
+    const role = arraysEqual(roles1, roles2)
+        ? [req.body.role, 'principal']
+        : bfUser?.role?.map(role => role !== 'principal' ? req.body.role : 'principal');
+    const updatedBfUser = await user_bfModel.findOneAndUpdate(
+        { userId: req.body.userId, bf_id: req.body.bf_id },
+        { ...req.body, role }, 
+        { new: true })
+    if (updatedBfUser?.role.find(role => role === 'principal')) {
         await principalModel.create({
             userId: req.body.userId,
             bfId: req.body.bf_id,
@@ -192,10 +207,13 @@ export const addNewBfMember = asyncWrapper(async (req, res) => {
     const newBfMember = await user_bfModel.create({
         bf_id: req.body.bf_id,
         userId: req.body.userId,
-        role: req.body.role || 'principal'
+        role: req.body.role === 'admin' ||
+            req.body.role === 'supervisor' ||
+            req.body.role === 'manager' ||
+            req.body.role === 'hr' ? [req.body.role, 'principal'] : [req.body.role]
     })
 
-    if (newBfMember.role === 'principal') {
+    if (newBfMember.role.find(role => role === 'principal')) {
         await principalModel.create({
             userId: req.body.userId,
             bfId: req.body.bf_id,

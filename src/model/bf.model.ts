@@ -1,6 +1,7 @@
 import mongoose, { Schema, model, Document } from 'mongoose';
 import BfSettings from '../model/bf_settings.model';
 import BfUser from '../model/user_bf.model';
+import principalModel from '../model/principal.model'
 
 interface IBf extends Document {
     fundName: string;
@@ -61,8 +62,23 @@ BfSchema.post('save', async (doc, next) => {
         const bfUser = new BfUser({
             userId: doc.createdBy,
             bf_id: doc._id,
-            role: "admin"
+            role: ["admin", "principal"]
         })
+
+        if (bfUser.role.find(role => role === 'principal')) {
+            await principalModel.create({
+                userId: doc.createdBy,
+                bfId: doc._id,
+                contributionAmount: 0,
+                membershipFee: 0,
+                annualSubscription: 0,
+                selectedPlan: 'monthly',
+                paymentMethod: 'Mobile Money',
+                paymentDetails: '',
+                autoPayment: false,
+                dueReminder: 'week'
+            })
+        }
 
         await bfUser.save();
         next();

@@ -5,7 +5,7 @@ const BfUserSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     bf_id: { type: Schema.Types.ObjectId, ref: 'Bf', required: true },
     role: {
-        type: String,
+        type: [String],
         enum: [
             'admin',
             'supervisor',
