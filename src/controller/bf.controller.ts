@@ -10,37 +10,52 @@ import User from '../model/user.model'
 import bf_requestsModel from './bf_requests.model';
 import beneficiaryModel from '../model/beneficiary.model';
 import principalModel from '../model/principal.model';
-
+import moment from 'moment'
 
 export const createBf = asyncWrapper(async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
-    const { fundName, fundDetails, accountType, accountInfo, walletAddress, groupId } = req.body;
+    const { fundName, fundDetails, accountType, accountInfo, groupId } = req.body;
 
     try {
+        // Check if the group exists
         const group = await Group.findById(groupId);
-
         if (!group) {
             return res.status(404).json({ error: "Group not found" });
         }
 
+        // Ensure the group doesn't already have a BF
         if (group.has_bf) {
             return res.status(400).json({ error: "Group already has a bereavement fund" });
         }
 
+        const lastGroupWithBf = await Group.findOne({ has_bf: true }).sort({ createdAt: -1 });
+        let groupCode = "00001"
+        if (lastGroupWithBf) {
+            // Extract the last group code and increment it
+            const lastGroupCode = parseInt(lastGroupWithBf._id.toString().slice(4, 9));
+            groupCode = (lastGroupCode + 1).toString().padStart(5, '0');
+        }
+        const registrationDate = moment().format("DDMM");
+        const walletCode = "10000";
+
+        const walletAddress = `${registrationDate}${groupCode}${walletCode}`;
+
+        // Create the new BF
         const newFund = new Bf({
             fundName,
             fundDetails,
             accountType,
             accountInfo,
-            walletAddress,
+            walletAddress: walletAddress.toUpperCase(),
             groupId,
             createdBy: req.user?._id,
         });
 
         await newFund.save();
 
+        // Update the group to mark that it now has a BF
         group.has_bf = true;
         await group.save();
 
@@ -145,7 +160,7 @@ export const updateBfUser = asyncWrapper(async (req, res) => {
     }
 
     const updatedBfUser = await user_bfModel.findOneAndUpdate({ userId: req.body.userId, bf_id: req.body.bf_id }, { ...req.body }, { new: true })
-        if(updatedBfUser?.role==='principal') {
+    if (updatedBfUser?.role === 'principal') {
         await principalModel.create({
             userId: req.body.userId,
             bfId: req.body.bf_id,
@@ -180,7 +195,7 @@ export const addNewBfMember = asyncWrapper(async (req, res) => {
         role: req.body.role || 'principal'
     })
 
-    if(newBfMember.role==='principal') {
+    if (newBfMember.role === 'principal') {
         await principalModel.create({
             userId: req.body.userId,
             bfId: req.body.bf_id,
@@ -409,9 +424,9 @@ export const removeBeneficiary = asyncWrapper(async (req, res) => {
 
 export const updatePrincipalSettings = asyncWrapper(async (req, res) => {
     const updatedPrincipal = await principalModel.findOneAndUpdate({ userId: req.params.principalId }, { ...req.body }, { new: true })
-    if (!updatedPrincipal) res.status(404).json({status:false,message:"Principal not found"})
-        
-        return res.status(200).json({
+    if (!updatedPrincipal) res.status(404).json({ status: false, message: "Principal not found" })
+
+    return res.status(200).json({
         status: true,
         principal: updatedPrincipal
     })
