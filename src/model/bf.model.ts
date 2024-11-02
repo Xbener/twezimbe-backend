@@ -2,6 +2,7 @@ import mongoose, { Schema, model, Document } from 'mongoose';
 import BfSettings from '../model/bf_settings.model';
 import BfUser from '../model/user_bf.model';
 import principalModel from '../model/principal.model'
+import Wallet from '../model/wallet.model'
 
 interface IBf extends Document {
     fundName: string;
@@ -101,6 +102,19 @@ BfSchema.post('save', async function (doc, next) {
         console.log('error creating bf settings', error)
     }
 });
+
+BfSchema.post('save', async function (doc, next) {
+    try {
+        const newWallet = await Wallet.create({
+            refType: "Bf",
+            ref: doc._id,
+            walletAddress: doc.walletAddress
+        })
+        next()
+    } catch (error) {
+        console.log('error creating wallet', error)
+    }
+})
 
 const Bf = model<IBf>('Bf', BfSchema);
 

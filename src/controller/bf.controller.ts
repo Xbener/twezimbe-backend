@@ -6,11 +6,12 @@ import asyncWrapper from '../middlewares/AsyncWrapper';
 import user_bfModel from '../model/user_bf.model';
 import mongoose from 'mongoose';
 import { sendEmail } from '../utils/notification.utils';
-import User from '../model/user.model'
+import User, { UserDoc } from '../model/user.model'
 import bf_requestsModel from './bf_requests.model';
 import beneficiaryModel from '../model/beneficiary.model';
 import principalModel from '../model/principal.model';
 import moment from 'moment'
+import bf_caseModel from '../model/bf_case.model';
 
 export const createBf = asyncWrapper(async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
@@ -173,7 +174,7 @@ export const updateBfUser = asyncWrapper(async (req, res) => {
         : bfUser?.role?.map(role => role !== 'principal' ? req.body.role : 'principal');
     const updatedBfUser = await user_bfModel.findOneAndUpdate(
         { userId: req.body.userId, bf_id: req.body.bf_id },
-        { ...req.body, role }, 
+        { ...req.body, role },
         { new: true })
     if (updatedBfUser?.role.find(role => role === 'principal')) {
         await principalModel.create({
@@ -457,4 +458,27 @@ export const getPrincipalSettings = asyncWrapper(async (req, res) => {
         status: true,
         principal
     })
+})
+
+
+export const fileCase = asyncWrapper(async (req, res) => {
+    const bf = await Bf.findOne({ _id: req.params.bfId })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund was not found" })
+    let principal = await principalModel.findOne({ userId: req.body.principalId, bfId: req.params.bfId }).populate<{ userId: UserDoc }>('userId')
+    if (!principal) return res.status(404).json({ status: false, message: "principal not found" })
+    const members = await user_bfModel.find({ bfId: req.params.bfId }).populate<{ userId: UserDoc }>('userId');
+    const newCase = await bf_caseModel.create({ ...req.body, bfId: req.params.bfId })
+
+
+    if (members.length) {
+        members.forEach(member => {
+            sendEmail(`${member.userId.email as string}`, "New case filed", `${principal.userId.lastName} ${principal.userId.firstName} has filed a new case for Bereavement fund ${bf.fundName}`)
+        })
+    }
+    res.status(201).json(
+        {
+            status: true,
+            case: newCase.populate('principal', 'bfId')
+        }
+    )
 })
