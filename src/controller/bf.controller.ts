@@ -460,6 +460,20 @@ export const getPrincipalSettings = asyncWrapper(async (req, res) => {
     })
 })
 
+export const getCases = asyncWrapper (async (req,res)=>{
+    const bf = await Bf.findOne({ _id: req.params.bfId })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund was not found" })
+    
+    const cases  = await bf_caseModel.find({bfId: req.params.bfId}).populate('principal')
+
+    return res.status(200).json(
+        {
+            status:true,
+            cases
+        }
+    )
+})
+
 
 export const fileCase = asyncWrapper(async (req, res) => {
     const bf = await Bf.findOne({ _id: req.params.bfId })
