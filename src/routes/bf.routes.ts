@@ -5,6 +5,7 @@ const router = Router()
 
 router.get('/cases/:bfId', getCases)
 router.post('/cases/:bfId', fileCase)
+router.put('/cases/:bfId')
 router.get('/principal/:principalId', getPrincipalSettings)
 router.put('/principal/:principalId', updatePrincipalSettings)
 router.post('/beneficiary/remove', removeBeneficiary)

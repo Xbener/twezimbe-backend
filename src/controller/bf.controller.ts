@@ -464,7 +464,7 @@ export const getCases = asyncWrapper (async (req,res)=>{
     const bf = await Bf.findOne({ _id: req.params.bfId })
     if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund was not found" })
     
-    const cases  = await bf_caseModel.find({bfId: req.params.bfId}).populate('principal')
+    const cases  = await bf_caseModel.find({bfId: new mongoose.Types.ObjectId(req.params.bfId)})
 
     return res.status(200).json(
         {
@@ -476,12 +476,14 @@ export const getCases = asyncWrapper (async (req,res)=>{
 
 
 export const fileCase = asyncWrapper(async (req, res) => {
+    console.log(req.body)
+    if(!req.body.name||!req.body.description) return res.status(400).json({status:false, message:"Provide all required info"}) 
     const bf = await Bf.findOne({ _id: req.params.bfId })
     if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund was not found" })
     let principal = await principalModel.findOne({ userId: req.body.principalId, bfId: req.params.bfId }).populate<{ userId: UserDoc }>('userId')
     if (!principal) return res.status(404).json({ status: false, message: "principal not found" })
     const members = await user_bfModel.find({ bfId: req.params.bfId }).populate<{ userId: UserDoc }>('userId');
-    const newCase = await bf_caseModel.create({ ...req.body, bfId: req.params.bfId })
+    const newCase = await bf_caseModel.create({ ...req.body, principal: new mongoose.Types.ObjectId(req.body.principalId), bfId: req.params.bfId })
 
 
     if (members.length) {
@@ -492,7 +494,7 @@ export const fileCase = asyncWrapper(async (req, res) => {
     res.status(201).json(
         {
             status: true,
-            case: newCase.populate('principal', 'bfId')
+            case: newCase
         }
     )
 })

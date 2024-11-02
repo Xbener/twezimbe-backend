@@ -6,8 +6,10 @@ const BereavementCaseSchema = new Schema({
     bfId: { type: Schema.Types.ObjectId, ref: "Bf", required: true },
     status: { type: String, enum: ['Open', 'Closed'], required: true, default: "Open" },
     contributionStatus: { type: String, enum: ['Complete', 'Incomplete'], default: 'Incomplete' },
-    description: {type:String},
-    createdDate: { type: Date, default: Date.now }
+    name: {type:String,required:true},
+    description: {type:String, required:true},
+}, {
+    timestamps: true
 });
 
 
