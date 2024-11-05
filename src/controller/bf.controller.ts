@@ -498,3 +498,14 @@ export const fileCase = asyncWrapper(async (req, res) => {
         }
     )
 })
+
+export const updateCase = asyncWrapper(async (req,res)=> {
+    const updatedCase = await bf_caseModel.findOneAndUpdate({_id: new mongoose.Types.ObjectId(req.params.caseId)}, {...req.body})
+
+    res.status(200).json(
+        {
+            status:true,
+            case: updatedCase
+        }
+    )
+})
