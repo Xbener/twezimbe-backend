@@ -225,7 +225,7 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
                 {
                     $match: { user_id: new mongoose.Types.ObjectId(userId) }
                 },
-                {
+             {
                     $lookup: {
                         from: 'roles', // collection name in MongoDB
                         localField: 'role_id',
@@ -257,11 +257,11 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
                         group_state: { $first: '$groupDetails.group_state' },
                         group_picture: { $first: '$groupDetails.group_picture' },
                         description: { $first: '$groupDetails.description' },
-                        invite_link: { $first: "$invite_link" },
+                        invite_link: { $first: "$groupDetails.invite_link" },
                         tags: { $first: '$groupDetails.tags' },
-                        upgraded: { $first: "$upgraded" },
-                        isSacco: { $first: "$isSacco" },
-                        has_bf: { $first: "$has_bf" },
+                        upgraded: { $first: "$groupDetails.upgraded" },
+                        isSacco: { $first: "$groupDetails.isSacco" },
+                        has_bf: { $first: "$groupDetails.has_bf" },
                         created_by: { $first: '$groupDetails.created_by' },
                         del_flag: { $first: '$groupDetails.del_flag' },
                         createdAt: { $first: '$groupDetails.createdAt' },
@@ -360,8 +360,8 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 tags: { $first: '$tags' },
                 invite_link: { $first: "$invite_link" },
                 upgraded: { $first: "$upgraded" },
-                isSacco: { $first: "$isSacco" },
                 has_bf: { $first: "$has_bf" },
+                isSacco: { $first: "$isSacco" },
                 created_by: { $first: '$created_by' },
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
