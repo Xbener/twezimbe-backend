@@ -202,7 +202,7 @@ export const addNewBfMember = asyncWrapper(async (req, res) => {
     const user = await User.findOne({ _id: req.body.userId })
     if (!user) return res.status(404).json({ status: false, message: "User not found" })
     const bf = await Bf.findById(req.body.bf_id)
-    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement Fund not found" })
     const bfMemberExists = await user_bfModel.findOne({ bf_id: req.body.bf_id, userId: req.body.userId })
     if (bfMemberExists) return res.status(409).json({ status: false, message: "user is already a member" })
     const newBfMember = await user_bfModel.create({
@@ -229,7 +229,7 @@ export const addNewBfMember = asyncWrapper(async (req, res) => {
         })
     }
 
-    sendEmail(`${user?.email}`, "You were added to a Bearevement Fund", `Hello. Admins of ${bf?.fundName} has added you as as ${req.body.role} for the Fund`)
+    sendEmail(`${user?.email}`, "You were added to a Bereavement Fund", `Hello. Admins of ${bf?.fundName} has added you as as ${req.body.role} for the Fund`)
     res.status(201).json({
         message: "member added successfully",
         bfMember: newBfMember,
@@ -241,7 +241,7 @@ export const applyToJoinBF = asyncWrapper(async (req, res) => {
     const user = await User.findOne({ _id: req.body.userId })
     if (!user) return res.status(404).json({ status: false, message: "User not found" })
     const bf = await Bf.findById(req.body.bf_id)
-    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement Fund not found" })
     const bfMemberExists = await user_bfModel.findOne({ bf_id: req.body.bf_id, userId: req.body.userId })
     if (bfMemberExists) return res.status(409).json({ status: false, message: "user is already a member" })
 
@@ -262,7 +262,7 @@ export const getBfJoinRequests = asyncWrapper(async (req, res) => {
 
     const { bf_id } = req.params
     const bf = await Bf.findById(bf_id)
-    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement Fund not found" })
     const requests = await bf_requestsModel.aggregate([
         {
             $match: {
@@ -303,7 +303,7 @@ export const acceptBfJoinRequest = asyncWrapper(async (req, res) => {
     const user = await User.findOne({ _id: req.body.userId })
     if (!user) return res.status(404).json({ status: false, message: "User not found" })
     const bf = await Bf.findById(req.body.bf_id)
-    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement Fund not found" })
     const bfMemberExists = await user_bfModel.findOne({ bf_id: req.body.bf_id, userId: req.body.userId })
     if (bfMemberExists) return res.status(409).json({ status: false, message: "user is already a member" })
 
@@ -348,7 +348,7 @@ export const declineRequest = asyncWrapper(async (req, res) => {
     const user = await User.findOne({ _id: requestExists.user_id })
     if (!user) return res.status(404).json({ status: false, message: "User not found" })
     const bf = await Bf.findById(requestExists.bf_id)
-    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement Fund not found" })
 
     await bf_requestsModel.findOneAndDelete({ _id: requestId })
 
@@ -366,7 +366,7 @@ export const addBeneficiary = asyncWrapper(async (req, res) => {
     const principal = await User.findById(req.body.principalId)
     if (!principal) return res.status(404).json({ status: false, message: "Principal not found" })
     const bf = await Bf.findById(req.body.bfId)
-    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement Fund not found" })
 
     const beneficiaryExists = await beneficiaryModel.findOne(req.body)
     if (beneficiaryExists) return res.status(409).json({ status: false, message: "This user is already your beneficiary" })
@@ -384,7 +384,7 @@ export const getPrincipalBeneficiary = asyncWrapper(async (req, res) => {
     const principal = await User.findById(req.params.principalId)
     if (!principal) return res.status(404).json({ status: false, message: "Principal not found" })
     const bf = await Bf.findById(req.params.bfId)
-    if (!bf) return res.status(404).json({ status: false, message: "Bearevement Fund not found" })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement Fund not found" })
 
     const beneficiaries = await beneficiaryModel.aggregate([
         {
@@ -460,15 +460,15 @@ export const getPrincipalSettings = asyncWrapper(async (req, res) => {
     })
 })
 
-export const getCases = asyncWrapper (async (req,res)=>{
+export const getCases = asyncWrapper(async (req, res) => {
     const bf = await Bf.findOne({ _id: req.params.bfId })
     if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund was not found" })
-    
-    const cases  = await bf_caseModel.find({bfId: new mongoose.Types.ObjectId(req.params.bfId)})
+
+    const cases = await bf_caseModel.find({ bfId: new mongoose.Types.ObjectId(req.params.bfId) })
 
     return res.status(200).json(
         {
-            status:true,
+            status: true,
             cases
         }
     )
@@ -477,7 +477,7 @@ export const getCases = asyncWrapper (async (req,res)=>{
 
 export const fileCase = asyncWrapper(async (req, res) => {
     console.log(req.body)
-    if(!req.body.name||!req.body.description) return res.status(400).json({status:false, message:"Provide all required info"}) 
+    if (!req.body.name || !req.body.description) return res.status(400).json({ status: false, message: "Provide all required info" })
     const bf = await Bf.findOne({ _id: req.params.bfId })
     if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund was not found" })
     let principal = await principalModel.findOne({ userId: req.body.principalId, bfId: req.params.bfId }).populate<{ userId: UserDoc }>('userId')

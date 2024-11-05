@@ -8,4 +8,4 @@ const SubscriptionSchema = new Schema({
 });
 
 
-export default model("Subscription", SubscriptionSchema)
+export default model("Subscription", SubscriptionSchema)    
