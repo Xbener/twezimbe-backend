@@ -464,7 +464,7 @@ export const getCases = asyncWrapper(async (req, res) => {
     const bf = await Bf.findOne({ _id: req.params.bfId })
     if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund was not found" })
 
-    const cases = await bf_caseModel.find({ bfId: new mongoose.Types.ObjectId(req.params.bfId) })
+    const cases = await bf_caseModel.find({ bfId: new mongoose.Types.ObjectId(req.params.bfId) }).populate('principal')
 
     return res.status(200).json(
         {
