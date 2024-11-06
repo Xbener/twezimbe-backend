@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { acceptBfJoinRequest, getCases, fileCase, updateCase, addBeneficiary, addNewBfMember, applyToJoinBF, createBf, declineRequest, getBfJoinRequests, getBfMembers, getGroupBf, getPrincipalBeneficiary, getPrincipalSettings, removeBeneficiary, updateBfUser, updatePrincipalSettings } from "../controller/bf.controller";
+import { acceptBfJoinRequest, getCases, fileCase, updateCase, updateWalletBalance, addBeneficiary, addNewBfMember, applyToJoinBF, createBf, declineRequest, getBfJoinRequests, getBfMembers, getGroupBf, getPrincipalBeneficiary, getPrincipalSettings, removeBeneficiary, updateBfUser, updatePrincipalSettings } from "../controller/bf.controller";
 
 const router = Router()
 
+
+router.put('/wallet', updateWalletBalance)
 router.get('/cases/:bfId', getCases)
 router.post('/cases/:bfId', fileCase)
 router.put('/cases/:caseId', updateCase)

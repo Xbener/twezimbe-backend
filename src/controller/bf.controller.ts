@@ -12,6 +12,7 @@ import beneficiaryModel from '../model/beneficiary.model';
 import principalModel from '../model/principal.model';
 import moment from 'moment'
 import bf_caseModel from '../model/bf_case.model';
+import Wallet from '../model/wallet.model'
 
 export const createBf = asyncWrapper(async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
@@ -76,24 +77,32 @@ export const getGroupBf = asyncWrapper(async (req: Request, res: Response) => {
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
 
     const { groupId } = req.params;
-
-    try {
-        const fund = await Bf.findOne({ groupId }).populate('createdBy', 'firstName lastName _id');
-        const fundUser = await user_bfModel.findOne({ userId: req?.user?._id, bf_id: fund?._id })
-
-        if (!fund) {
-            return res.status(404).json({ error: "Bereavement fund not found for this group" });
-        }
-
-        res.status(200).json({
-            status: true,
-            bf: { fund, role: fundUser?.role }
-        });
-    } catch (error) {
-        console.error("Error fetching fund:", error);
-        res.status(500).json({ error: "Error fetching fund" });
+    // Find the BF fund for the specified group
+    const fund = await Bf.findOne({ groupId }).populate('createdBy', 'firstName lastName _id');
+    if (!fund) {
+        return res.status(404).json({ error: "Bereavement fund not found for this group" });
     }
-})
+
+    // Find the user's role within this BF
+    const fundUser = await user_bfModel.findOne({ userId: req?.user?._id, bf_id: fund._id });
+
+    // Fetch the wallet associated with the BF
+    const wallet = await Wallet.findOne({ ref: fund._id, refType: 'Bf' });
+
+    res.status(200).json({
+        status: true,
+        bf: {
+            fund,
+            role: fundUser?.role,
+            wallet: wallet ? {
+                walletAddress: wallet.walletAddress,
+                balance: wallet.balance,
+                transactionHistory: wallet.transactionHistory
+            } : null
+        }
+    });
+});
+
 
 export const getBfMembers = asyncWrapper(async (req, res) => {
     const members = await user_bfModel.aggregate([
@@ -141,7 +150,7 @@ export const getBfMembers = asyncWrapper(async (req, res) => {
         }
     ]);
 
-
+    console.log()
     res.status(200).json({
         status: true,
         members
@@ -499,13 +508,48 @@ export const fileCase = asyncWrapper(async (req, res) => {
     )
 })
 
-export const updateCase = asyncWrapper(async (req,res)=> {
-    const updatedCase = await bf_caseModel.findOneAndUpdate({_id: new mongoose.Types.ObjectId(req.params.caseId)}, {...req.body})
+export const updateCase = asyncWrapper(async (req, res) => {
+    const updatedCase = await bf_caseModel.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(req.params.caseId) }, { ...req.body })
 
     res.status(200).json(
         {
-            status:true,
+            status: true,
             case: updatedCase
+        }
+    )
+})
+
+
+export const updateWalletBalance = asyncWrapper(async (req, res) => {
+    const { walletAddress, userId, amount } = req.body
+    const wallet = await Wallet.findOne({ walletAddress })
+    if (!wallet) return res.status(404).json({ status: false, message: "Wallet was not found" })
+    const user = await User.findById(userId)
+    if (!user) return res.status(404).json({ status: false, message: "User was not found" })
+    const bf = await Bf.findOne({ walletAddress })
+    if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund not found" })
+    const updatedWallet = await Wallet.findOneAndUpdate(
+        { walletAddress },
+        {
+            $inc: { balance: amount },
+            $push: {
+                transactionHistory: {
+                    type: "Credit",
+                    amount,
+                    userId,
+                    date: new Date() // Add the current date for the transaction
+                }
+            }
+        },
+        { new: true } // Return the updated document
+    );
+
+    sendEmail(`${user?.email}`, "Fund received", `Dear ${user?.firstName} ${user.lastName} your payment of ${amount} UGX to bereavement Fund ${bf?.fundName} has been received. `)
+
+    res.status(200).json(
+        {
+            status: true,
+            message: "Balance updated successfully"
         }
     )
 })
