@@ -87,7 +87,7 @@ export const getGroupBf = asyncWrapper(async (req: Request, res: Response) => {
     const fundUser = await user_bfModel.findOne({ userId: req?.user?._id, bf_id: fund._id });
 
     // Fetch the wallet associated with the BF
-    const wallet = await Wallet.findOne({ ref: fund._id, refType: 'Bf' });
+    const wallet = await Wallet.findOne({ ref: fund._id, refType: 'Bf' }).populate({path: "transactionHistory.user"});
 
     res.status(200).json({
         status: true,
@@ -536,7 +536,7 @@ export const updateWalletBalance = asyncWrapper(async (req, res) => {
                 transactionHistory: {
                     type: "Credit",
                     amount,
-                    userId,
+                    user: userId,
                     date: new Date() // Add the current date for the transaction
                 }
             }
