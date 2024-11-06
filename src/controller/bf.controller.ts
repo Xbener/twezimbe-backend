@@ -7,12 +7,13 @@ import user_bfModel from '../model/user_bf.model';
 import mongoose from 'mongoose';
 import { sendEmail } from '../utils/notification.utils';
 import User, { UserDoc } from '../model/user.model'
-import bf_requestsModel from './bf_requests.model';
+import bf_requestsModel from '../model/bf_requests.model';
 import beneficiaryModel from '../model/beneficiary.model';
 import principalModel from '../model/principal.model';
 import moment from 'moment'
 import bf_caseModel from '../model/bf_case.model';
 import Wallet from '../model/wallet.model'
+import contributionModel from '../model/contribution.model';
 
 export const createBf = asyncWrapper(async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
@@ -83,12 +84,14 @@ export const getGroupBf = asyncWrapper(async (req: Request, res: Response) => {
         return res.status(404).json({ error: "Bereavement fund not found for this group" });
     }
 
+
     // Find the user's role within this BF
     const fundUser = await user_bfModel.findOne({ userId: req?.user?._id, bf_id: fund._id });
 
     // Fetch the wallet associated with the BF
-    const wallet = await Wallet.findOne({ ref: fund._id, refType: 'Bf' }).populate({path: "transactionHistory.user"});
+    const wallet = await Wallet.findOne({ ref: fund._id, refType: 'Bf' }).populate({ path: "transactionHistory.user" });
 
+    const contributions = await contributionModel.find({ walletAddress: fund.walletAddress }).populate('contributor')
     res.status(200).json({
         status: true,
         bf: {
@@ -98,7 +101,8 @@ export const getGroupBf = asyncWrapper(async (req: Request, res: Response) => {
                 walletAddress: wallet.walletAddress,
                 balance: wallet.balance,
                 transactionHistory: wallet.transactionHistory
-            } : null
+            } : null,
+            contributions: contributions
         }
     });
 });
@@ -552,4 +556,28 @@ export const updateWalletBalance = asyncWrapper(async (req, res) => {
             message: "Balance updated successfully"
         }
     )
+})
+
+
+export const contributeToBf = asyncWrapper(async (req, res) => {
+
+    const { walletAddress, contributor, amount, contribute_case } = req.body
+
+    const user = await User.findById(contributor)
+    if (!user) return res.status(404).json({ status: false, message: "User was not found" })
+    const caseExists = await bf_caseModel.findById(contribute_case)
+    if (!caseExists) return res.status(404).json({ status: false, message: "Case was not found" })
+    const newContribution = await contributionModel.create({
+        walletAddress,
+        contributor,
+        amount,
+        case: contribute_case
+    })
+
+    sendEmail(`${user.email}`, "Contribution received", `Dear ${user.firstName} ${user.lastName}, your contribution to case ${caseExists.name} was received`)
+
+    res.status(201).json({
+        status: true,
+        message: "Contribution received"
+    })
 })
