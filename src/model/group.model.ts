@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { model, Schema } from "mongoose";
 
-const default_group_pic = 'https://res.cloudinary.com/djehh7gum/image/upload/v1729070790/ura0gnomuhpti7sbi79r.png'
+// const default_group_pic = 'https://res.cloudinary.com/djehh7gum/image/upload/v1729070790/ura0gnomuhpti7sbi79r.png'
 
 export interface GroupDoc extends Document {
     name: string;
@@ -25,7 +25,7 @@ const RoleSchema = new Schema({
     description: { type: String },
     tags: { type: String },
     invite_link: { type: String, required: false },
-    group_picture: { type: String, required: true, default: default_group_pic },
+    group_picture: { type: String, required: false, default: "" },
     upgraded: { type: Boolean, default: false, required: true },
     isSacco: { type: Boolean, default: false, required: true },
     has_bf: { type: Boolean, default: false, required: true },
