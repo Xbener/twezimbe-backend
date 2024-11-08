@@ -43,7 +43,7 @@ export const createBf = asyncWrapper(async (req: Request, res: Response) => {
         const registrationDate = moment().format("DDMM");
         const walletCode = "10000";
 
-        const walletAddress = `${registrationDate}${groupCode}${walletCode}`;
+        const walletAddress = `${registrationDate}${groupCode || "00001"}${walletCode}`;
 
         // Create the new BF
         const newFund = new Bf({
