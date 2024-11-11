@@ -60,8 +60,7 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
     const userRole = await RoleModel.findOne({ role_name: 'User' });
 
     const roleUser = await RoleUser.create({ role_id: userRole?._id, user_id: recordedUser._id })
-    console.log("role_user", roleUser);
-
+ 
     // Send response
     res.status(200).json({ message: "Account created!" });
 });
