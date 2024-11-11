@@ -274,10 +274,9 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
     if (!isTokenValid) {
         return res.status(400).json({ message: "Access denied" });
     };
-    console.log(req.body)
     const profileID = generateProfileID(req.body.national_id_number!);
 
-    await UserModel.findByIdAndUpdate(req.user?._id, {
+    await UserModel.findByIdAndUpdate(req.params.userId, {
         $set: {
             ...req.body,
             profileID,
@@ -287,7 +286,7 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
     });
 
     const updatedUser = await UserModel.findById(req.user?._id);
-
+    console.log(updatedUser?.role)
     if (!updatedUser) {
         return res.status(400).json({ message: "User not found" });
     };
@@ -426,9 +425,11 @@ export const updateActiveStatus = asyncWrapper(async (req, res) => {
 
 export const deleteUserAccount = asyncWrapper(async (req, res) => {
     const { userId } = req.params
-    const user = await UserModel.findByIdAndUpdate(userId, {
-        del_falg: 1
-    }, { new: true })
-    console.log("user updated", user?.id, user?.del_falg)
-    return res.status(204)
+    // const user = await UserModel.findByIdAndUpdate(userId, {
+    //     del_falg: 1
+    // }, { new: true })
+    // console.log("user updated", user?.id, user?.del_falg)
+
+    await UserModel.findByIdAndDelete(userId)
+    return res.status(200).json({ status: true })
 })

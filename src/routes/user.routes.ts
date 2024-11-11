@@ -16,7 +16,7 @@ userRouter.post('/verify', validateOTP, verifyOTP);
 userRouter.post('/regenerateOtp', regenerateOTP);
 userRouter.post('/forgotPassword', validateEmail, forgotPassword);
 userRouter.post('/resetPassword', validatePasswordReset, resetPassword);
-userRouter.put('/update', validateUpdateUserInfo, updateAccount);
+userRouter.put('/update/:userId', validateUpdateUserInfo, updateAccount);
 userRouter.get('/validate', verifyToken);
 userRouter.post('/user/upload-profile-picture', upload.single('profile_pic'), uploadProfilePicture)
 // userRouter.get('/facebook', passport.authenticate("facebook"))
