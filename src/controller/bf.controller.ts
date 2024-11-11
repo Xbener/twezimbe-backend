@@ -14,6 +14,7 @@ import moment from 'moment'
 import bf_caseModel from '../model/bf_case.model';
 import Wallet from '../model/wallet.model'
 import contributionModel from '../model/contribution.model';
+import transactionsModel from '../model/transactions.model';
 
 export const getAllBfs = asyncWrapper(async (req, res) => {
     const isTokenValid = await ValidateToken(req);
@@ -559,7 +560,14 @@ export const updateWalletBalance = asyncWrapper(async (req, res) => {
         },
         { new: true } // Return the updated document
     );
+    const newTransaction = new transactionsModel({
+        wallet: walletAddress,
+        amount,
+        user: userId,
+        type: "Credit"
+    })
 
+    await newTransaction.save()
     sendEmail(`${user?.email}`, "Fund received", `Dear ${user?.firstName} ${user.lastName} your payment of ${amount} UGX to bereavement Fund ${bf?.fundName} has been received. `)
 
     res.status(200).json(
@@ -585,7 +593,14 @@ export const contributeToBf = asyncWrapper(async (req, res) => {
         amount,
         case: contribute_case
     })
+    const newTransaction = new transactionsModel({
+        wallet: walletAddress,
+        amount,
+        user: user._id,
+        type: "Credit"
+    })
 
+    await newTransaction.save()
     sendEmail(`${user.email}`, "Contribution received", `Dear ${user.firstName} ${user.lastName}, your contribution to case ${caseExists.name} was received`)
 
     res.status(201).json({
