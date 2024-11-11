@@ -108,6 +108,73 @@ export const addGroup = asyncWrapper(async (req: Request, res: Response, next: N
 
 })
 
+export const getAllGroups = asyncWrapper(async (req, res) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    }
+
+    if (req.user?.role !== "Admin") return res.status(401).json({ status: false, message: "You are not allowed to access this resource" })
+
+    const groups = await Group.aggregate([
+        {
+            $match: {}
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'created_by',
+                foreignField: '_id',
+                as: 'createdByDetails'
+            }
+        },
+        {
+            $unwind: '$createdByDetails'
+        },
+        {
+            $lookup: {
+                from: 'user_groups',
+                localField: '_id',
+                foreignField: 'group_id',
+                as: 'members'
+            }
+        },
+        {
+            $addFields: {
+                uniqueMembers: { $setUnion: '$members.user_id' }
+            }
+        },
+        {
+            $addFields: {
+                memberCount: { $size: '$uniqueMembers' }
+            }
+        },
+        {
+            $project: {
+                group_id: '$_id',
+                group_name: '$name',
+                group_type: '$group_type',
+                group_state: '$group_state',
+                group_picture: '$group_picture',
+                invite_link: '$invite_link', // Access directly
+                description: '$description',
+                upgraded: '$upgraded', // Access directly
+                isSacco: '$isSacco', // Access directly
+                has_bf: '$has_bf', // Access directly
+                tags: '$tags',
+                created_by: '$createdByDetails',
+                del_flag: '$del_flag',
+                createdAt: '$createdAt',
+                updatedAt: '$updatedAt',
+                memberCount: 1,
+                members: "$members"
+            }
+        }
+    ]);
+    return res.status(200).json({
+        groups
+    })
+})
 
 
 export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
@@ -225,7 +292,7 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
                 {
                     $match: { user_id: new mongoose.Types.ObjectId(userId) }
                 },
-             {
+                {
                     $lookup: {
                         from: 'roles', // collection name in MongoDB
                         localField: 'role_id',

@@ -1,9 +1,10 @@
 import express from "express";
-import { addGroup, getPublicGroups, getJoinedGroupList, getGroupById, joinGroup, leaveGroup, deleteGroup, updateGroupPicture, updateGroup, RequestToJoinGroup, getGroupRequests, declineRequest, acceptRequest, upgradePlan, captureWebHook, getGroupMembers } from "../controller/group.controller";
+import { addGroup, getPublicGroups, getJoinedGroupList, getGroupById, joinGroup, leaveGroup, deleteGroup, updateGroupPicture, updateGroup, RequestToJoinGroup, getGroupRequests, declineRequest, acceptRequest, upgradePlan, captureWebHook, getGroupMembers, getAllGroups } from "../controller/group.controller";
 import { upload } from "../utils/multer";
 import { roleUpdate } from "../controller";
 const roleRouter = express.Router();
 
+roleRouter.get('/', getAllGroups)
 roleRouter.post('/', addGroup);
 roleRouter.get('/public', getPublicGroups);
 roleRouter.get('/findByUserId', getJoinedGroupList);
