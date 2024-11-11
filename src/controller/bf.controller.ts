@@ -15,6 +15,18 @@ import bf_caseModel from '../model/bf_case.model';
 import Wallet from '../model/wallet.model'
 import contributionModel from '../model/contribution.model';
 
+export const getAllBfs = asyncWrapper(async (req, res) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
+    if (req?.user?.role !== 'Admin') return res.status(401).json({ message: "Not authorized to visit this page" })
+
+    const bfs = await Bf.find({}).populate('createdBy', 'firstName lastName _id');
+    res.status(200).json({
+        status: true,
+        bfs
+    })
+})
+
 export const createBf = asyncWrapper(async (req: Request, res: Response) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
