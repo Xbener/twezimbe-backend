@@ -60,7 +60,7 @@ const StartServer = async () => {
     })
 
     app.get('/api/v1/auth/google', passport.authenticate("google", { scope: ['profile', 'email'] }))
-    app.get('/api/v1/auth/google/callback', passport.authenticate('google', { failureRedirect: '/api/v1/auth/google' }), async (req, res, next) => {
+    app.get('/api/v1/auth/google/callback', passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL}`, failureMessage: true }), async (req, res, next) => {
 
         const token = await GenerateToken({
             _id: req.user?._id || '',
@@ -72,7 +72,7 @@ const StartServer = async () => {
 
 
     app.get('/api/v1/auth/facebook', passport.authenticate("facebook", { scope: ['public_profile', 'email'] }))
-    app.get('/api/v1/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/api/v1/auth/facebook' }), async (req, res, next) => {
+    app.get('/api/v1/auth/facebook/callback', passport.authenticate('facebook', { failureMessage: true, failureRedirect: `${process.env.FRONTEND_URL}` }), async (req, res, next) => {
 
         const token = await GenerateToken({
             _id: req.user?._id || '',

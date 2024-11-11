@@ -12,6 +12,11 @@ import moment from "moment";
 import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import messagesModel from "../model/messages.model";
+import user_bfModel from "../model/user_bf.model";
+import UserGroup from "../model/user_group.model";
+import UserSettings from "../model/user_settings.model";
+import beneficiaryModel from "../model/beneficiary.model";
+import principalModel from "../model/principal.model";
 
 export const signUp = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
@@ -110,6 +115,7 @@ export const signIn = asyncWrapper(async (req: Request, res: Response, next: Nex
     //     return res.status(400).json({ message: "Please verify your account first" });
     // }
 
+    if (existingUser?.del_falg === 1) return res.status(403).json({ status: false, message: "Account was not found" })
     const token = await GenerateToken({
         _id: existingUser._id,
         email: existingUser.email,
@@ -400,7 +406,7 @@ export const getAllUsers = asyncWrapper(async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Access denied" });
     };
 
-    const users = await UserModel.find({});
+    const users = await UserModel.find({ del_falg: 0 });
     return res.status(200).json({ status: true, users })
 })
 
@@ -416,4 +422,13 @@ export const updateActiveStatus = asyncWrapper(async (req, res) => {
         activeStatus: req.body.status
     })
 
+})
+
+export const deleteUserAccount = asyncWrapper(async (req, res) => {
+    const { userId } = req.params
+    const user = await UserModel.findByIdAndUpdate(userId, {
+        del_falg: 1
+    }, { new: true })
+    console.log("user updated", user?.id, user?.del_falg)
+    return res.status(204)
 })

@@ -17,9 +17,12 @@ const facebookStrategy = new FacebookStrategy({
     profileFields: ['id', 'displayName', 'photos', 'email'],
     enableProof: true
     // state: true
-}, async function (accessToken: string, refreshToken: string, profile: any, cb: (n: null, p: any) => void) {
+}, async function (accessToken: string, refreshToken: string, profile: any, cb: (n: any, p: any) => void) {
 
     const existingUser = await UserModel.findOne({ email: profile._json.email });
+    if (existingUser && existingUser.del_falg === 1) {
+        return cb("Account not found", null);
+    }
     if (existingUser) {
         return cb(null, existingUser)
     }
@@ -75,6 +78,9 @@ const googleStrategy = new GoogleStrategy({
 }, async function (accessToken, refreshToken, profile, cb) {
 
     const existingUser = await UserModel.findOne({ email: profile._json.email });
+    if (existingUser && existingUser.del_falg === 1) {
+        return cb("Account not found", null);
+    }
     if (existingUser) {
         return cb(null, existingUser)
     }
