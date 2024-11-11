@@ -400,7 +400,7 @@ export const getAllUsers = asyncWrapper(async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Access denied" });
     };
 
-    const users = await UserModel.find({ _id: { $ne: req?.user?._id } });
+    const users = await UserModel.find({});
     return res.status(200).json({ status: true, users })
 })
 
