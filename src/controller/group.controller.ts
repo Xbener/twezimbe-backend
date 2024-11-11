@@ -713,7 +713,6 @@ export const updateGroup = asyncWrapper(async (req: Request, res: Response, next
     if (!existingGroup) return res.status(404).json({ errors: "Group not found" })
     const group = await Group.findOne({ _id: req.body.group_id })
 
-    console.log(req.body)
     if (req.body.isSacco && group?.memberCount! < 5) {
         return res.status(403).json({ errors: "Can't Transition to SACCO. You need at least 5 members of the group." })
     }
