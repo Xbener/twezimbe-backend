@@ -7,4 +7,5 @@ export interface UserPayload {
     _id: string;
     email: string;
     verified: boolean;
+    role?:string
 }

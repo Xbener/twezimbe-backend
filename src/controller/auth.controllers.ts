@@ -11,6 +11,7 @@ import fs from 'fs'
 import moment from "moment";
 import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
+import messagesModel from "../model/messages.model";
 
 export const signUp = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
@@ -61,6 +62,37 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
 });
 
 
+export const adminSignIn = asyncWrapper(async (req: Request, res: Response) => {
+    // Check existing email
+    const existingUser = await UserModel.findOne({ email: req.body.email });
+    if (!existingUser) {
+        return res.status(400).json({ message: "Invalid email or password" });
+    };
+
+    // Check password
+    const isPasswordValid = await ValidatePassword(req.body.password, existingUser.password, existingUser.salt);
+    if (!isPasswordValid) {
+        return res.status(400).json({ message: "Invalid email or password" });
+    };
+
+    if (existingUser.role !== 'Admin') return res.status(401).json({ status: false, message: "you are not authorized to access this page" })
+    const token = await GenerateToken({
+        _id: existingUser._id,
+        email: existingUser.email,
+        verified: existingUser.verified,
+        role: existingUser?.role
+    });
+
+    const { password: hashedPassword, salt, otp, otpExpiryTime, verified, ...rest } = existingUser._doc;
+
+    // Send response
+    res
+        .cookie("access-token", token, { httpOnly: true, expires: new Date(Date.now() + 3600000) })
+        .status(200)
+        .json({ message: "Sign in successful", token, rest });
+
+})
+
 export const signIn = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
     const existingUser = await UserModel.findOne({ email: req.body.email });
@@ -74,14 +106,15 @@ export const signIn = asyncWrapper(async (req: Request, res: Response, next: Nex
         return res.status(400).json({ message: "Invalid email or password" });
     };
 
-    if (!existingUser.verified) {
-        return res.status(400).json({ message: "Please verify your account first" });
-    }
+    // if (!existingUser.verified) {
+    //     return res.status(400).json({ message: "Please verify your account first" });
+    // }
 
     const token = await GenerateToken({
         _id: existingUser._id,
         email: existingUser.email,
-        verified: existingUser.verified
+        verified: existingUser.verified,
+        role: existingUser?.role
     });
 
     const { password: hashedPassword, salt, otp, otpExpiryTime, verified, ...rest } = existingUser._doc;
@@ -90,7 +123,7 @@ export const signIn = asyncWrapper(async (req: Request, res: Response, next: Nex
     res
         .cookie("access-token", token, { httpOnly: true, expires: new Date(Date.now() + 3600000) })
         .status(200)
-        .json({ message: "Sign in successful", token });
+        .json({ message: "Sign in successful", token, rest });
 });
 
 export const getUserProfile = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
@@ -114,14 +147,15 @@ export const getUserProfile = asyncWrapper(async (req: Request, res: Response, n
     const token = await GenerateToken({
         _id: existingUser._id,
         email: existingUser.email,
-        verified: existingUser.verified
+        verified: existingUser.verified,
+        role: existingUser.role
     });
 
     const { password: hashedPassword, salt, otp, otpExpiryTime, verified, ...rest } = existingUser._doc;
 
     // Send response
     res
-        .cookie("access-token", token, { httpOnly: true, expires: new Date(Date.now() + 3600000) })
+        .cookie("access-token", token, { httpOnly: true })
         .status(200)
         .json(rest);
 });
