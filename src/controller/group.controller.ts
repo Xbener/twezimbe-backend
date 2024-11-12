@@ -167,7 +167,8 @@ export const getAllGroups = asyncWrapper(async (req, res) => {
                 createdAt: '$createdAt',
                 updatedAt: '$updatedAt',
                 memberCount: 1,
-                members: "$members"
+                members: "$members",
+                suspended: "$suspended"
             }
         }
     ]);
@@ -204,7 +205,8 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                     $match: {
                         _id: { $nin: joinedGroups },
                         group_state: { $ne: "Invite-Only" },
-                        del_flag: 0
+                        del_flag: 0,
+                        $or: [{ suspended: false }, { suspended: { $exists: false } }]
                     }
                 },
                 {
@@ -254,7 +256,8 @@ export const getPublicGroups = asyncWrapper(async (req: Request, res: Response, 
                         createdAt: '$createdAt',
                         updatedAt: '$updatedAt',
                         memberCount: 1,
-                        members: "$members"
+                        members: "$members",
+                        suspended: "suspended"
                     }
                 }
             ]);
@@ -290,7 +293,10 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
 
             const result = await UserGroup.aggregate([
                 {
-                    $match: { user_id: new mongoose.Types.ObjectId(userId) }
+                    $match: {
+                        user_id: new mongoose.Types.ObjectId(userId),
+                        $or: [{ suspended: false }, { suspended: { $exists: false } }]
+                    }
                 },
                 {
                     $lookup: {
@@ -332,12 +338,13 @@ export const getJoinedGroupList = asyncWrapper(async (req: Request, res: Respons
                         created_by: { $first: '$groupDetails.created_by' },
                         del_flag: { $first: '$groupDetails.del_flag' },
                         createdAt: { $first: '$groupDetails.createdAt' },
-                        updatedAt: { $first: '$groupDetails.updatedAt' }
+                        updatedAt: { $first: '$groupDetails.updatedAt' },
+                        suspended: { $first: "$groupDetails.suspended" }
                     }
                 }
             ]);
 
-            res.status(201).json({ message: "successfully", groups: result });
+            res.status(201).json({ message: "successfully", groups: result.filter(group => !group.suspended) });
 
         } catch (err) {
             throw err;
@@ -368,7 +375,8 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
         {
             $match: {
                 _id: new mongoose.Types.ObjectId(req.params.groupId),
-                del_flag: 0, // Ensuring the group is not deleted
+                del_flag: 0, // Ensuring the group is not deleted,
+                $or: [{ suspended: false }, { suspended: { $exists: false } }]
             }
         },
         {
@@ -433,6 +441,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 del_flag: { $first: '$del_flag' },
                 createdAt: { $first: '$createdAt' },
                 updatedAt: { $first: '$updatedAt' },
+                suspended: { $first: "$suspended" },
                 members: {
                     $addToSet: {
                         users: "$memberDetails",
@@ -461,6 +470,7 @@ export const getGroupById = asyncWrapper(async (req: Request, res: Response, nex
                 createdAt: { $first: '$createdAt' },
                 updatedAt: { $first: '$updatedAt' },
                 members: { $first: { $arrayElemAt: ["$members.users", 0] } },
+                suspended: { $first: "$suspended" }
             }
         }
     ]);
@@ -942,4 +952,30 @@ export const captureWebHook = asyncWrapper(async (req: Request, res: Response, n
         sendEmail(createdBy.email, `Upgraded ${updatedGroup?.name} successfully`, `Hello! Your payment to upgrade to Twezimbe Premium was received. You can now enjoy all premium features!`);
         res.status(200).json({ url: session.success_url });
     }
+})
+
+
+export const handleGroupSuspension = asyncWrapper(async (req, res) => {
+    const { groupId } = req.params
+    const group = await Group.findById(groupId).populate('created_by')
+    if (!group) return res.status(404).json({ status: false, message: "Group was not found" })
+    const updatedGroup = await Group.findByIdAndUpdate(group?._id, {
+        $set: {
+            suspended: !group.suspended
+        }
+    }, { new: true })
+
+    const created_by = group?.created_by as UserDoc
+    sendEmail(
+        `${created_by?.email}`,
+        `${updatedGroup?.suspended ? "Group suspended" : "Group reactivated"}`,
+        `Dear ${created_by?.firstName} ${created_by?.lastName}, your group ${group?.name} have been ${updatedGroup?.suspended ? "Suspended" : "reactivated"} by system admins.`
+    )
+    res.status(200).json(
+        {
+            status: true,
+            message: `group ${updatedGroup?.suspended ? "suspended" : "unsuspended"} successfully`,
+            group: updatedGroup
+        }
+    )
 })

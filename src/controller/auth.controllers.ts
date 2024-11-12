@@ -65,7 +65,7 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
     const roleUser = await RoleUser.create({ role_id: userRole?._id, user_id: recordedUser._id })
 
     // Send response
-    res.status(200).json({ message: "Account created!" });
+    res.status(200).json({ message: "Account created!", user: recordedUser });
 });
 
 
@@ -454,6 +454,11 @@ export const handleSuspension = asyncWrapper(async (req, res) => {
         }
     }, { new: true })
 
+    sendEmail(
+        `${user.email}`,
+        `${updatedUser?.suspended ? "Account suspended" : "Account reactivated"}`,
+        `Dear ${updatedUser?.firstName} ${updatedUser?.lastName}, your account have been ${updatedUser?.suspended ? "Suspended" : "reactivated"} by system admins.`
+    )
     res.status(200).json(
         {
             status: true,

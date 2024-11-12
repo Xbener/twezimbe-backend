@@ -11,6 +11,7 @@ export interface GroupDoc extends Document {
     tags: string;
     invite_link: string;
     _id: string;
+    suspended: boolean
 }
 
 const RoleSchema = new Schema({
@@ -30,6 +31,7 @@ const RoleSchema = new Schema({
     isSacco: { type: Boolean, default: false, required: true },
     has_bf: { type: Boolean, default: false, required: true },
     memberCount: { type: Number, required: true, default: 1 },
+    suspended: { type: Boolean, required: true, default: false },
     created_by: {
         type: ObjectId,
         ref: 'User'
