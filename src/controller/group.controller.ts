@@ -654,7 +654,7 @@ export const deleteGroup = asyncWrapper(async (req: Request, res: Response) => {
     if (!groupExists) return res.status(404).json({ errors: "Group was not found" })
 
     const created_by = groupExists.created_by as UserDoc
-    if (created_by._id != userId) return res.status(409).json({ status: false, errors: "You Don't have privilege to delete this group" })
+    if (created_by._id != userId || req.user?.role !== 'Admin') return res.status(409).json({ status: false, errors: "You Don't have privilege to delete this group" })
 
 
     await UserGroup.deleteMany({ group_id: groupId })
@@ -662,7 +662,8 @@ export const deleteGroup = asyncWrapper(async (req: Request, res: Response) => {
     await Group.deleteOne({ _id: groupId })
 
     return res.status(200).json({
-        status: true
+        status: true,
+        message: "Group removed successfully"
     })
 
 })
@@ -979,3 +980,4 @@ export const handleGroupSuspension = asyncWrapper(async (req, res) => {
         }
     )
 })
+
