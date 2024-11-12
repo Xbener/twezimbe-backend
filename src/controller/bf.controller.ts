@@ -15,13 +15,61 @@ import bf_caseModel from '../model/bf_case.model';
 import Wallet from '../model/wallet.model'
 import contributionModel from '../model/contribution.model';
 import transactionsModel from '../model/transactions.model';
+import bf_settingsModel from '../model/bf_settings.model';
 
 export const getAllBfs = asyncWrapper(async (req, res) => {
     const isTokenValid = await ValidateToken(req);
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" });
     if (req?.user?.role !== 'Admin') return res.status(401).json({ message: "Not authorized to visit this page" })
 
-    const bfs = await Bf.find({}).populate('createdBy', 'firstName lastName _id');
+    const bfs = await Bf.aggregate([
+        {
+            $match: {}
+        },
+        {
+            $lookup: {
+                from: "wallets",
+                localField: "walletAddress",
+                foreignField: "walletAddress",
+                as: "wallet"
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "createdBy",
+                foreignField: "_id",
+                as: "createdBy"
+            }
+        },
+        {
+            $unwind: {
+                path: "$wallet",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: "$createdBy",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                wallet: 1,
+                createdBy: 1,
+                walletAddress: 1,
+                fundName: 1,
+                fundDetails: 1,
+                accountType: 1,
+                accountInfo: 1,
+                groupId: 1,
+                createdAt: 1
+            }
+        }
+    ])
+
     res.status(200).json({
         status: true,
         bfs
@@ -607,4 +655,21 @@ export const contributeToBf = asyncWrapper(async (req, res) => {
         status: true,
         message: "Contribution received"
     })
+})
+
+export const deleteBf = asyncWrapper(async (req, res) => {
+    const bf = await Bf.findById(req.params.bfId)
+    if (!bf) return res.status(404).json({ status: false, message: "Fund not found" })
+    await Bf.findByIdAndDelete(req.params.bfId)
+    await principalModel.deleteMany({ bfId: new mongoose.Types.ObjectId(req.params.bfId) })
+    await beneficiaryModel.deleteMany({ bfId: new mongoose.Types.ObjectId(req.params.ObjectId) })
+    await bf_settingsModel.findByIdAndDelete(req.params.bfId)
+    await Wallet.deleteOne({ ref: new mongoose.Types.ObjectId(req.params.bfId) })
+    await Group.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(bf.groupId) }, { has_bf: false })
+    await bf_caseModel.deleteMany({ bfId: new mongoose.Types.ObjectId(req.params.bfId) })
+    await bf_requestsModel.deleteMany({ bf_id: new mongoose.Types.ObjectId(req.params.bfId) })
+    await transactionsModel.deleteMany({ ref: new mongoose.Types.ObjectId(req.params.bfId) })
+    await user_bfModel.deleteMany({ bf_id: new mongoose.Types.ObjectId(req.params.bfId) })
+
+    return res.status(200).json({ status: true })
 })
