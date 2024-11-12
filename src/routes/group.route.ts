@@ -2,12 +2,13 @@ import express from "express";
 import { addGroup, getPublicGroups, getJoinedGroupList, getGroupById, joinGroup, leaveGroup, deleteGroup, updateGroupPicture, updateGroup, RequestToJoinGroup, getGroupRequests, declineRequest, acceptRequest, upgradePlan, captureWebHook, getGroupMembers, getAllGroups, handleGroupSuspension } from "../controller/group.controller";
 import { upload } from "../utils/multer";
 import { roleUpdate } from "../controller";
+import { validGroupCreation } from "../utils/groupValidation";
 const roleRouter = express.Router();
 
 
 roleRouter.put('/suspend/:groupId', handleGroupSuspension)
 roleRouter.get('/', getAllGroups)
-roleRouter.post('/', addGroup);
+roleRouter.post('/', validGroupCreation, addGroup);
 roleRouter.get('/public', getPublicGroups);
 roleRouter.get('/findByUserId', getJoinedGroupList);
 roleRouter.post('/join', joinGroup);
