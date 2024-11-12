@@ -16,6 +16,7 @@ import Wallet from '../model/wallet.model'
 import contributionModel from '../model/contribution.model';
 import transactionsModel from '../model/transactions.model';
 import bf_settingsModel from '../model/bf_settings.model';
+import { update } from './application.controllers';
 
 export const getAllBfs = asyncWrapper(async (req, res) => {
     const isTokenValid = await ValidateToken(req);
@@ -43,6 +44,20 @@ export const getAllBfs = asyncWrapper(async (req, res) => {
             }
         },
         {
+            $lookup: {
+                from: "groups",
+                localField: "groupId",
+                foreignField: "_id",
+                as: "group"
+            }
+        },
+        {
+            $unwind: {
+                path: "$group",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
             $unwind: {
                 path: "$wallet",
                 preserveNullAndEmptyArrays: true
@@ -64,7 +79,7 @@ export const getAllBfs = asyncWrapper(async (req, res) => {
                 fundDetails: 1,
                 accountType: 1,
                 accountInfo: 1,
-                groupId: 1,
+                group: 1,
                 createdAt: 1
             }
         }
@@ -672,4 +687,23 @@ export const deleteBf = asyncWrapper(async (req, res) => {
     await user_bfModel.deleteMany({ bf_id: new mongoose.Types.ObjectId(req.params.bfId) })
 
     return res.status(200).json({ status: true })
+})
+
+
+export const updateBf = asyncWrapper(async (req, res) => {
+    const updatedBf = await Bf.findByIdAndUpdate(req.params.bfId, {
+        $set: {
+            ...req.body
+        }
+    }, { new: true })
+
+    res.status(
+        200
+    ).json(
+        {
+            status: true,
+            message: "Fund updated successfully",
+            bf: updatedBf
+        }
+    )
 })
