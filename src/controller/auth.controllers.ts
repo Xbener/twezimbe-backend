@@ -17,6 +17,9 @@ import UserGroup from "../model/user_group.model";
 import UserSettings from "../model/user_settings.model";
 import beneficiaryModel from "../model/beneficiary.model";
 import principalModel from "../model/principal.model";
+import mongoose from "mongoose";
+import bf_requestsModel from "../model/bf_requests.model";
+import walletModel from "../model/wallet.model";
 
 export const signUp = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
@@ -431,6 +434,12 @@ export const deleteUserAccount = asyncWrapper(async (req, res) => {
     // console.log("user updated", user?.id, user?.del_falg)
 
     await UserModel.findByIdAndDelete(userId)
+    await beneficiaryModel.deleteMany({ userId: new mongoose.Types.ObjectId(userId) })
+    await user_bfModel.deleteMany({ userId: new mongoose.Types.ObjectId(userId) })
+    await bf_requestsModel.deleteMany({ user_id: new mongoose.Types.ObjectId(userId) })
+    await walletModel.deleteOne({ ref: new mongoose.Types.ObjectId(userId) })
+    await UserSettings.deleteMany({ userId: new mongoose.Types.ObjectId(userId) })
+    await UserGroup.deleteMany({ user_id: new mongoose.Types.ObjectId(userId) })
     return res.status(200).json({ status: true })
 })
 
