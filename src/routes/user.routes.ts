@@ -1,10 +1,12 @@
 import express from 'express';
-import { forgotPassword, getAllUsers, generate2FASecret, getUserProfile, regenerateOTP, resetPassword, signIn, signUp, updateAccount, uploadProfilePicture, verify2FAToken, verifyOTP, verifyToken, updateActiveStatus, adminSignIn, deleteUserAccount } from '../controller';
+import { forgotPassword, getAllUsers, generate2FASecret, getUserProfile, regenerateOTP, resetPassword, signIn, signUp, updateAccount, uploadProfilePicture, verify2FAToken, verifyOTP, verifyToken, updateActiveStatus, adminSignIn, deleteUserAccount, handleSuspension } from '../controller';
 import { validateEmail, validateOTP, validatePasswordReset, validateUpdateUserInfo, validateUserSignIn, validateUserSignUp } from '../utils/userValidation';
 import passport from 'passport';
 import { upload } from '../utils/multer';
 const userRouter = express.Router();
 
+
+userRouter.put("/suspend/:userId", handleSuspension)
 userRouter.delete('/:userId', deleteUserAccount)
 userRouter.post('/status', updateActiveStatus)
 userRouter.post('/signup', validateUserSignUp, signUp);

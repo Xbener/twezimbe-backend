@@ -53,6 +53,7 @@ export interface UserDoc extends Document {
     otpExpiryTime: Date;
     salt: string;
     _doc: UserDoc;
+    suspended:boolean;
     role: "User" | "Manager" | "Admin" | string;
     securityQuestions?: {
         question: string;
@@ -148,6 +149,7 @@ const UserSchema = new Schema<UserDoc>({
     del_falg: { type: Number, default: 0 },
     verified: { type: Boolean, required: true, default: false },
     otp: { type: Number, required: true },
+    suspended: { type: Boolean, required: true, default: false },
     otpExpiryTime: { type: Date, required: true },
     salt: { type: String, required: false },
     active_status: { type: String, enum: ['online', 'offline', 'do not disturb', 'idle'], default: 'online' },

@@ -60,7 +60,7 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
     const userRole = await RoleModel.findOne({ role_name: 'User' });
 
     const roleUser = await RoleUser.create({ role_id: userRole?._id, user_id: recordedUser._id })
- 
+
     // Send response
     res.status(200).json({ message: "Account created!" });
 });
@@ -115,6 +115,7 @@ export const signIn = asyncWrapper(async (req: Request, res: Response, next: Nex
     // }
 
     if (existingUser?.del_falg === 1) return res.status(403).json({ status: false, message: "Account was not found" })
+    if (existingUser.suspended) return res.status(403).json({ status: false, message: "This account was suspended. Please contact admins for more info" })
     const token = await GenerateToken({
         _id: existingUser._id,
         email: existingUser.email,
@@ -431,4 +432,24 @@ export const deleteUserAccount = asyncWrapper(async (req, res) => {
 
     await UserModel.findByIdAndDelete(userId)
     return res.status(200).json({ status: true })
+})
+
+
+export const handleSuspension = asyncWrapper(async (req, res) => {
+    const { userId } = req.params
+    const user = await UserModel.findById(userId)
+    if (!user) return res.status(404).json({ status: false, message: "User was not found" })
+    const updatedUser = await UserModel.findByIdAndUpdate(user?._id, {
+        $set: {
+            suspended: !user.suspended
+        }
+    }, { new: true })
+
+    res.status(200).json(
+        {
+            status: true,
+            message: `user ${updatedUser?.suspended ? "suspended" : "unsuspended"} successfully`,
+            user: updatedUser
+        }
+    )
 })

@@ -23,6 +23,7 @@ const facebookStrategy = new FacebookStrategy({
     if (existingUser && existingUser.del_falg === 1) {
         return cb("Account not found", null);
     }
+    if (existingUser?.suspended) return cb("Account suspended. Please contact admins for more info", null)
     if (existingUser) {
         return cb(null, existingUser)
     }
@@ -81,6 +82,7 @@ const googleStrategy = new GoogleStrategy({
     if (existingUser && existingUser.del_falg === 1) {
         return cb("Account not found", null);
     }
+    if (existingUser?.suspended) return cb("Account suspended. Please contact admins for more info", null)
     if (existingUser) {
         return cb(null, existingUser)
     }
