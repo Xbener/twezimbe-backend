@@ -623,14 +623,13 @@ export const updateWalletBalance = asyncWrapper(async (req, res) => {
         },
         { new: true } // Return the updated document
     );
-    const newTransaction = new transactionsModel({
+    const newTransaction = await transactionsModel.create({
         wallet: walletAddress,
         amount,
         user: userId,
         type: "Credit"
     })
 
-    await newTransaction.save()
     sendEmail(`${user?.email}`, "Fund received", `Dear ${user?.firstName} ${user.lastName} your payment of ${amount} UGX to bereavement Fund ${bf?.fundName} has been received. `)
 
     res.status(200).json(
@@ -656,14 +655,13 @@ export const contributeToBf = asyncWrapper(async (req, res) => {
         amount,
         case: contribute_case
     })
-    const newTransaction = new transactionsModel({
+    const newTransaction = await transactionsModel.create({
         wallet: walletAddress,
         amount,
         user: user._id,
         type: "Credit"
     })
 
-    await newTransaction.save()
     sendEmail(`${user.email}`, "Contribution received", `Dear ${user.firstName} ${user.lastName}, your contribution to case ${caseExists.name} was received`)
 
     res.status(201).json({
