@@ -602,6 +602,8 @@ export const updateCase = asyncWrapper(async (req, res) => {
 
 export const updateWalletBalance = asyncWrapper(async (req, res) => {
     const { walletAddress, userId, amount } = req.body
+
+    console.log(req.body)
     const wallet = await Wallet.findOne({ walletAddress })
     if (!wallet) return res.status(404).json({ status: false, message: "Wallet was not found" })
     const user = await User.findById(userId)

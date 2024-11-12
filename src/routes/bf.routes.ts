@@ -3,11 +3,11 @@ import { acceptBfJoinRequest, getAllBfs, getCases, fileCase, updateCase, updateW
 
 const router = Router()
 
+router.put('/wallet/balance', updateWalletBalance)
 router.put('/:bfId', updateBf)
 router.delete('/:bfId', deleteBf)
 router.get('/', getAllBfs)
 router.post('/contributions', contributeToBf)
-router.put('/wallet', updateWalletBalance)
 router.get('/cases/:bfId', getCases)
 router.post('/cases/:bfId', fileCase)
 router.put('/cases/:caseId', updateCase)
