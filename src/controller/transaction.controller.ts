@@ -24,3 +24,9 @@ export const getAllTransactions = asyncWrapper(async (req, res) => {
         }
     )
 })
+
+export const deleteTransaction = asyncWrapper(async (req, res) => {
+
+    await Transaction.findByIdAndDelete(req.params.transactionId)
+    return res.status(200).json({ status: true })
+})
