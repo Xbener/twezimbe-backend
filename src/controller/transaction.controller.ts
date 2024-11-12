@@ -16,7 +16,7 @@ export const addTransaction = asyncWrapper(async (req, res) => {
 })
 
 export const getAllTransactions = asyncWrapper(async (req, res) => {
-    const transactions = await Transaction.find({}).sort({ createdAt: 1 })
+    const transactions = await Transaction.find({}).sort({ createdAt: 1 }).populate('user')
     res.status(200).json(
         {
             status: true,
