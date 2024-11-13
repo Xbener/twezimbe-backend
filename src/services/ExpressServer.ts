@@ -13,6 +13,7 @@ import settingsRouter from '../routes/settings.route'
 import BfRouter from '../routes/bf.routes'
 import TransactionRouter from '../routes/transaction.routes'
 import questionRouter from '../routes/questions.route'
+import faqRouter from '../routes/faq.routes'
 
 export default async (app: Application) => {
     app.use(express.json());
@@ -44,6 +45,7 @@ export default async (app: Application) => {
     app.use('/api/v1/bf', BfRouter)
     app.use('/api/v1/transactions', TransactionRouter)
     app.use('/api/v1/questions', questionRouter)
+    app.use('/api/v1/faqs', faqRouter)
 
     app.use(ErrorHandlerMiddleware);
 
