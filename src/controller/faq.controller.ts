@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Faq from '../model/faq.model';
 import mongoose from 'mongoose';
+import asyncWrapper from '../middlewares/AsyncWrapper';
 
 export const createFaq = async (req: Request, res: Response): Promise<Response> => {
     const { question, answer } = req.body;
@@ -50,3 +51,14 @@ export const updateFaq = async (req: Request, res: Response): Promise<Response> 
         return res.status(500).json({ error: 'Failed to update FAQ' });
     }
 };
+
+
+export const deleteFaq = asyncWrapper(async (req: Request, res: Response) => {
+    await Faq.findByIdAndDelete(req.params.faqId)
+    res.status(200).json(
+        {
+            status: true,
+            message: "FAQ deleted successfully"
+        }
+    )
+})
