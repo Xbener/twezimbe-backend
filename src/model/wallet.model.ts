@@ -7,7 +7,7 @@ const WalletSchema = new Schema(
             type: Schema.Types.ObjectId,
             refPath: 'refType'
         },
-        walletAddress: { type: String, required: true },
+        walletAddress: { type: String, required: true, unique: true },
         transactionHistory: [
             {
                 type: { type: String, enum: ['Credit', 'Debit'], required: true },

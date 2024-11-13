@@ -110,6 +110,7 @@ export const createBf = asyncWrapper(async (req: Request, res: Response) => {
         }
 
         const lastGroupWithBf = await Group.findOne({ has_bf: true }).sort({ createdAt: -1 });
+        const lastWallet = await Wallet.findOne({}).sort({ createdAt: -1 })
         let groupCode = "00001"
         if (lastGroupWithBf) {
             // Extract the last group code and increment it
@@ -117,8 +118,9 @@ export const createBf = asyncWrapper(async (req: Request, res: Response) => {
             groupCode = (lastGroupCode + 1).toString().padStart(5, '0');
         }
         const registrationDate = moment().format("DDMM");
-        const walletCode = "10000";
-
+        let walletCode;
+        if (lastWallet) walletCode = `${lastWallet?.walletAddress?.slice(8) + 1}`
+        walletCode = `0001`
         const walletAddress = `${registrationDate}${groupCode || "00001"}${walletCode}`;
 
         // Create the new BF
