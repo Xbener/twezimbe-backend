@@ -9,7 +9,11 @@ export const createFaq = async (req: Request, res: Response): Promise<Response> 
         const newFaq = new Faq({ question, answer });
         await newFaq.save();
 
-        return res.status(201).json(newFaq);
+        return res.status(201).json({
+            status: true,
+            message: "New FAQ added successfully",
+            faq: newFaq
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Failed to create FAQ' });
