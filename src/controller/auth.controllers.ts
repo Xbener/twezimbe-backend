@@ -20,6 +20,7 @@ import principalModel from "../model/principal.model";
 import mongoose from "mongoose";
 import bf_requestsModel from "../model/bf_requests.model";
 import walletModel from "../model/wallet.model";
+import User from "../model/user.model";
 
 export const signUp = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
@@ -466,4 +467,26 @@ export const handleSuspension = asyncWrapper(async (req, res) => {
             user: updatedUser
         }
     )
+})
+
+
+export const updatePassword = asyncWrapper(async (req: Request, res: Response) => {
+    const isTokenValid = await ValidateToken(req);
+    if (!isTokenValid) {
+        return res.status(400).json({ message: "Access denied" });
+    };
+    let { oldPassword, newPassword } = req.body
+    const user = await User.findOne({ email: req.user?.email })
+    if (!user) return res.status(404).json({ status: false, message: "Account not found" })
+    if ((!oldPassword || oldPassword === "") && user.password) return res.status(403).json({ status: false, message: "Enter correct password" })
+
+    if (oldPassword && user.password) {
+        let comparePassword = await ValidatePassword(oldPassword, user.password, user.salt)
+        if (!comparePassword) return res.status(403).json({ status: false, message: "You entered wrong incorrect password" })
+    }
+    const salt = await GenerateSalt();
+    newPassword = await GeneratePassword(newPassword, salt);
+    await User.findOneAndUpdate({ email: req.user?.email }, { password: newPassword, salt })
+
+    res.status(200).json({ status: true, message: "Password updated successfully" })
 })

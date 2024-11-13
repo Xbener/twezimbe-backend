@@ -10,6 +10,15 @@ const handleValidationErrors = async (req: Request, res: Response, next: NextFun
     next();
 };
 
+export const validateChangePassword = [
+    body('newPassword')
+        .not()
+        .isEmpty()
+        .withMessage("New password is required")
+        .isStrongPassword()
+        .withMessage("New password must be at least 6 characters with an Upper case character, lower case character, symbol and digit. "),
+        handleValidationErrors
+]
 export const validateUserSignIn = [
     body('email')
         .not()
