@@ -19,7 +19,7 @@ import chatroomModel from "../model/chatroom.model";
 export const addGroup = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const isTokenValid = await ValidateToken(req);
 
-    
+
     if (!isTokenValid) return res.status(403).json({ errors: "Access denied" })
     const existingGroup = await Group.findOne({ name: req.body.name });
     if (existingGroup) return res.status(403).json({ errors: `Group with ${existingGroup.name}. Please try a different name` })
