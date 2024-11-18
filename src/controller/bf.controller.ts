@@ -17,6 +17,7 @@ import contributionModel from '../model/contribution.model';
 import transactionsModel from '../model/transactions.model';
 import bf_settingsModel from '../model/bf_settings.model';
 import { update } from './application.controllers';
+import { generateWallet } from '../utils/generateWallet';
 
 export const getAllBfs = asyncWrapper(async (req, res) => {
     const isTokenValid = await ValidateToken(req);
@@ -110,26 +111,20 @@ export const createBf = asyncWrapper(async (req: Request, res: Response) => {
         }
 
         const lastGroupWithBf = await Group.findOne({ has_bf: true }).sort({ createdAt: -1 });
-        const lastWallet = await Wallet.findOne({}).sort({ createdAt: -1 })
         let groupCode = "00001"
         if (lastGroupWithBf) {
             // Extract the last group code and increment it
             const lastGroupCode = parseInt(lastGroupWithBf._id.toString().slice(4, 9));
             groupCode = (lastGroupCode + 1).toString().padStart(5, '0');
         }
-        const registrationDate = moment().format("DDMM");
-        let walletCode;
-        if (lastWallet) walletCode = `${lastWallet?.walletAddress?.slice(8) + 1}`
-        walletCode = `0001`
-        const walletAddress = `${registrationDate}${groupCode || "00001"}${walletCode}`;
-
+        const walletAddress = await generateWallet(groupCode, group?._id!, "Bf")
         // Create the new BF
         const newFund = new Bf({
             fundName,
             fundDetails,
             accountType,
             accountInfo,
-            walletAddress: walletAddress.toUpperCase(),
+            walletAddress: walletAddress.toString().toUpperCase(),
             groupId,
             createdBy: req.user?._id,
         });
@@ -605,13 +600,12 @@ export const updateCase = asyncWrapper(async (req, res) => {
 export const updateWalletBalance = asyncWrapper(async (req, res) => {
     const { walletAddress, userId, amount } = req.body
 
-    console.log(req.body)
     const wallet = await Wallet.findOne({ walletAddress })
     if (!wallet) return res.status(404).json({ status: false, message: "Wallet was not found" })
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ status: false, message: "User was not found" })
     const bf = await Bf.findOne({ walletAddress })
-    if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund not found" })
+    // if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund not found" })
     const updatedWallet = await Wallet.findOneAndUpdate(
         { walletAddress },
         {
@@ -634,8 +628,10 @@ export const updateWalletBalance = asyncWrapper(async (req, res) => {
         type: "Credit"
     })
 
-    sendEmail(`${user?.email}`, "Fund received", `Dear ${user?.firstName} ${user.lastName} your payment of ${amount} UGX to bereavement Fund ${bf?.fundName} has been received. `)
-
+    if (bf) {
+        sendEmail(`${user?.email}`, "Fund received", `Dear ${user?.firstName} ${user.lastName} your payment of ${amount} UGX to bereavement Fund ${bf?.fundName} has been received. `)
+    }
+    sendEmail(`${user.email}`, `Balance updated successfully`, `Dear ${user?.firstName} ${user.lastName}, your deposit of ${amount} UGX have been confirmed. Check your profile for balance.`)
     res.status(200).json(
         {
             status: true,

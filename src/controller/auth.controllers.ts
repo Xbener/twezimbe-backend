@@ -21,6 +21,7 @@ import mongoose from "mongoose";
 import bf_requestsModel from "../model/bf_requests.model";
 import walletModel from "../model/wallet.model";
 import User from "../model/user.model";
+import { generateWallet } from "../utils/generateWallet";
 
 export const signUp = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check existing email
@@ -42,9 +43,17 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
         req.body.verified = true;
     }
 
-    // Record account
+    // generateWallet
+    const lastPersonWithWallet = await User.findOne({}).sort({ createdAt: -1 });
+    let walletCode = "00001"
+    if (lastPersonWithWallet) {
+        // Extract the last group code and increment it
+        const lastWalletcode = parseInt(lastPersonWithWallet._id.toString().slice(4, 9));
+        walletCode = (lastWalletcode + 1).toString().padStart(5, '0');
+    }
     const recordedUser = await UserModel.create(req.body);
-
+    const walletAddress = await generateWallet(walletCode, recordedUser._id, "User")
+    await User.findByIdAndUpdate(recordedUser._id, { wallet: walletAddress })
     var emailMessageBody = '';
     if (recordedUser.role === 'Manager') {
         emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/manager/auth/verifyotp?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
@@ -153,7 +162,7 @@ export const getUserProfile = asyncWrapper(async (req: Request, res: Response, n
     if (!existingUser) {
         return res.status(400).json({ message: "User not found" });
     }
-
+    const wallet = await walletModel.findOne({ walletAddress: existingUser?.wallet })
     const token = await GenerateToken({
         _id: existingUser._id,
         email: existingUser.email,
@@ -167,7 +176,7 @@ export const getUserProfile = asyncWrapper(async (req: Request, res: Response, n
     res
         .cookie("access-token", token, { httpOnly: true })
         .status(200)
-        .json(rest);
+        .json({ ...rest, wallet });
 });
 
 
@@ -175,9 +184,14 @@ export const getUserData = asyncWrapper(async (req: Request, res: Response) => {
     const { userId } = req.params
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ status: false, message: "user was not found" })
+    const { ...rest } = user._doc
+    const wallet = await walletModel.findOne({ walletAddress: user.wallet }).populate({
+        path: 'transactionHistory.user', // Path to populate
+        model: 'User', // Ensure this matches the model name
+    });
     res.status(200).json({
         status: true,
-        user
+        user: { ...rest, wallet }
     })
 })
 

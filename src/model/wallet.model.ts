@@ -13,7 +13,7 @@ const WalletSchema = new Schema(
                 type: { type: String, enum: ['Credit', 'Debit'], required: true },
                 amount: { type: Number, required: true },
                 date: { type: Date, default: Date.now },
-                user: { type: String, ref: "User", required: true }
+                user: { type: Schema.Types.ObjectId, ref: "User", required: true }
             }
         ],
         balance: { type: Number, default: 0 }

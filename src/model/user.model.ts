@@ -7,6 +7,7 @@ export interface UserDoc extends Document {
     title?: "Mr." | "Ms." | "Mrs." | "Dr." | "Prof.";
     email: string;
     password: string;
+    wallet?: string;
     firstName: string;
     lastName: string;
     gender?: "Male" | "Female" | "Other";
@@ -53,7 +54,7 @@ export interface UserDoc extends Document {
     otpExpiryTime: Date;
     salt: string;
     _doc: UserDoc;
-    suspended:boolean;
+    suspended: boolean;
     role: "User" | "Manager" | "Admin" | string;
     securityQuestions?: {
         question: string;
@@ -76,6 +77,7 @@ const UserSchema = new Schema<UserDoc>({
     profileID: { type: String, required: false },
     password: { type: String, required: false },
     firstName: { type: String, required: true },
+    wallet: { type: String, required: true },
     lastName: { type: String, required: true },
     gender: {
         type: String,
