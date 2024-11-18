@@ -171,6 +171,17 @@ export const getUserProfile = asyncWrapper(async (req: Request, res: Response, n
 });
 
 
+export const getUserData = asyncWrapper(async (req: Request, res: Response) => {
+    const { userId } = req.params
+    const user = await User.findById(userId)
+    if (!user) return res.status(404).json({ status: false, message: "user was not found" })
+    res.status(200).json({
+        status: true,
+        user
+    })
+})
+
+
 export const regenerateOTP = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const foundUser = await UserModel.findById(req.body.id);
     if (!foundUser) {
@@ -289,8 +300,7 @@ export const updateAccount = asyncWrapper(async (req: Request, res: Response, ne
         new: true
     });
 
-    const updatedUser = await UserModel.findById(req.user?._id);
-    console.log(updatedUser?.role)
+    const updatedUser = await UserModel.findById(req.params.userId);
     if (!updatedUser) {
         return res.status(400).json({ message: "User not found" });
     };
@@ -489,4 +499,28 @@ export const updatePassword = asyncWrapper(async (req: Request, res: Response) =
     await User.findOneAndUpdate({ email: req.user?.email }, { password: newPassword, salt })
 
     res.status(200).json({ status: true, message: "Password updated successfully" })
+})
+
+
+export const sendCompleteProfileEmail = asyncWrapper(async (req, res) => {
+    const { affectedId, principalId } = req.body
+    const affected = await User.findById(affectedId)
+    if (!affected) return res.status(404).json({ status: false, message: "Affected person not found" })
+    const principal = await User.findById(principalId)
+    if (!principal) return res.status(404).json({ status: false, message: "Principal not found" })
+    if (affectedId === principalId) {
+        sendEmail(`${principal.next_of_kin?.email}`, `Please complete your KYC`, `Dear ${principal.next_of_kin?.name}, As next of kin for ${affected.firstName} ${affected.lastName}, you are required to complete their KYC profile for them so a case can be filed for them.`)
+        return res.status(200).json({
+            status: true,
+            message: "email sent to next of kin"
+        })
+    }
+
+    sendEmail(`${principal.email}`, "Please complete KYC", "")
+    return res.status(200).json(
+        {
+            status: true,
+            message: "Please complete KYC info for the affected person."
+        }
+    )
 })
