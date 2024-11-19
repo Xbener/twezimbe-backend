@@ -550,7 +550,43 @@ export const getCases = asyncWrapper(async (req, res) => {
     const bf = await Bf.findOne({ _id: req.params.bfId })
     if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund was not found" })
 
-    const cases = await bf_caseModel.find({ bfId: new mongoose.Types.ObjectId(req.params.bfId) }).populate('principal').populate("affected")
+    // const cases = await bf_caseModel.find({ bfId: new mongoose.Types.ObjectId(req.params.bfId) }).populate('principal').populate("affected")
+    const cases = await bf_caseModel.aggregate([
+        {
+            $match: {
+                bfId: new mongoose.Types.ObjectId(req.params.bfId)
+            }
+        },
+        {
+            $lookup: {
+                from: "principals", // Replace with the actual collection name for 'Principal'
+                localField: "principal",
+                foreignField: "_id",
+                as: "principal"
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "affected",
+                foreignField: "_id",
+                as: "affected"
+            }
+        },
+        {
+            $lookup: {
+                from: "contributions", // Name of the 'Contributions' collection
+                localField: "_id", // The `_id` of the case
+                foreignField: "case", // The `case` field in the Contribution schema
+                as: "contributions" // Field to store the matched contributions
+            }
+        },
+        {
+            $addFields: {
+                totalContributions: { $sum: "$contributions.amount" } // Sum all contributions for the case
+            }
+        }
+    ]);
 
     return res.status(200).json(
         {
