@@ -606,7 +606,9 @@ export const updateWalletBalance = asyncWrapper(async (req, res) => {
     if (!user) return res.status(404).json({ status: false, message: "User was not found" })
     const bf = await Bf.findOne({ walletAddress })
     // if (!bf) return res.status(404).json({ status: false, message: "Bereavement fund not found" })
-    const updatedWallet = await Wallet.findOneAndUpdate(
+
+
+    await Wallet.findOneAndUpdate(
         { walletAddress },
         {
             $inc: { balance: amount },
@@ -621,6 +623,32 @@ export const updateWalletBalance = asyncWrapper(async (req, res) => {
         },
         { new: true } // Return the updated document
     );
+    if (req.body.wallet) {
+        await Wallet.findOneAndUpdate(
+            { walletAddress: req.body.wallet },
+            {
+                $inc: { balance: -amount },
+                $push: {
+                    transactionHistory: {
+                        type: "Debit",
+                        amount,
+                        user: userId,
+                        date: new Date() // Add the current date for the transaction
+                    }
+                }
+            },
+            { new: true } // Return the updated document
+        );
+
+        const newTransaction = await transactionsModel.create({
+            wallet: walletAddress,
+            amount,
+            user: userId,
+            type: "Debit"
+        })
+
+        sendEmail(`${user.email}`, "Balance debited", `${amount} have been debited from your wallet`)
+    }
     const newTransaction = await transactionsModel.create({
         wallet: walletAddress,
         amount,
@@ -661,6 +689,33 @@ export const contributeToBf = asyncWrapper(async (req, res) => {
         user: user._id,
         type: "Credit"
     })
+
+    if (req.body.wallet) {
+        await Wallet.findOneAndUpdate(
+            { walletAddress: req.body.wallet },
+            {
+                $inc: { balance: -amount },
+                $push: {
+                    transactionHistory: {
+                        type: "Debit",
+                        amount,
+                        user: user._id,
+                        date: new Date() // Add the current date for the transaction
+                    }
+                }
+            },
+            { new: true } // Return the updated document
+        );
+
+        const newTransaction = await transactionsModel.create({
+            wallet: walletAddress,
+            amount,
+            user: user._id,
+            type: "Debit"
+        })
+
+        sendEmail(`${user.email}`, "Balance debited", `${amount} have been debited from your wallet`)
+    }
 
     sendEmail(`${user.email}`, "Contribution received", `Dear ${user.firstName} ${user.lastName}, your contribution to case ${caseExists.name} was received`)
 
