@@ -433,7 +433,27 @@ export const getAllUsers = asyncWrapper(async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Access denied" });
     };
 
-    const users = await UserModel.find({ del_falg: 0 });
+    const users = await UserModel.aggregate([
+        {
+            $match: {
+                del_falg: 0
+            }
+        },
+        {
+            $lookup: {
+                from: "wallets",
+                localField: "wallet",
+                foreignField: "walletAddress",
+                as: "wallet"
+            }
+        },
+        {
+            $unwind: {
+                path: "$wallet",
+                preserveNullAndEmptyArrays: true
+            }
+        }
+    ]);
     return res.status(200).json({ status: true, users })
 })
 
@@ -537,4 +557,24 @@ export const sendCompleteProfileEmail = asyncWrapper(async (req, res) => {
             message: "Please complete KYC info for the affected person."
         }
     )
+})
+
+export const createUserWallet = asyncWrapper(async (req, res) => {
+    const { userId } = req.body
+    const lastPersonWithWallet = await User.findOne(
+        { walletAddress: { $exists: true, $ne: "" } },
+        { walletAddress: true }
+    ).sort({ createdAt: -1 });
+    let walletCode = "00001"
+    if (lastPersonWithWallet?._id) {
+        const lastWalletcode = lastPersonWithWallet.wallet?.toString().slice(4, 8);
+        walletCode = (lastWalletcode! + 1).toString().padStart(5, '0');
+    }
+    const walletAddress = await generateWallet(walletCode, new mongoose.Types.ObjectId(userId), "User")
+    await User.findByIdAndUpdate(userId, { wallet: walletAddress })
+    res.status(201).json({
+        status: true,
+        message: "Wallet created successfully",
+        walletAddress
+    })
 })
