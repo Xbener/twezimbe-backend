@@ -77,7 +77,7 @@ const UserSchema = new Schema<UserDoc>({
     profileID: { type: String, required: false },
     password: { type: String, required: false },
     firstName: { type: String, required: true },
-    wallet: { type: String, required: true },
+    wallet: { type: String, required: false },
     lastName: { type: String, required: true },
     gender: {
         type: String,
