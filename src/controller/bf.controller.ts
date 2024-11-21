@@ -119,7 +119,7 @@ export const createBf = asyncWrapper(async (req: Request, res: Response) => {
             const newCode = lastGroupCode + 1;
             const totalLength = lastGroupCodeStr.length; // Use the length of the sliced portion
             groupCode = newCode.toString().padStart(totalLength, "0");
-
+        }
         const walletAddress = await generateWallet(groupCode, group?._id!, "Bf")
         // Create the new BF
         const newFund = new Bf({
