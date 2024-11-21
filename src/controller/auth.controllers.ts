@@ -565,12 +565,12 @@ export const createUserWallet = asyncWrapper(async (req, res) => {
         { walletAddress: { $exists: true, $ne: "" } },
         { walletAddress: true }
     ).sort({ createdAt: -1 });
-    let walletCode = "00001"
+    let walletCode: string | number = "00001"
     if (lastPersonWithWallet?._id) {
-        const lastWalletcode = parseInt(lastPersonWithWallet.wallet?.toString().slice(4, 8)!);
-        walletCode = (lastWalletcode! + 1).toString().padStart(5, '0');
+        const lastWalletcode = parseInt(lastPersonWithWallet.wallet?.slice(4, 9)!);
+        walletCode = lastWalletcode! + 1;
     }
-    const walletAddress = await generateWallet(walletCode, new mongoose.Types.ObjectId(userId), "User")
+    const walletAddress = await generateWallet(`${walletCode}`, new mongoose.Types.ObjectId(userId), "User")
     await User.findByIdAndUpdate(userId, { wallet: walletAddress })
     res.status(201).json({
         status: true,
