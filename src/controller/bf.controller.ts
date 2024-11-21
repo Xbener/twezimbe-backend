@@ -554,38 +554,73 @@ export const getCases = asyncWrapper(async (req, res) => {
     const cases = await bf_caseModel.aggregate([
         {
             $match: {
-                bfId: new mongoose.Types.ObjectId(req.params.bfId)
-            }
+                bfId: new mongoose.Types.ObjectId(req.params.bfId),
+            },
         },
         {
             $lookup: {
-                from: "principals", // Replace with the actual collection name for 'Principal'
+                from: "users",
                 localField: "principal",
                 foreignField: "_id",
-                as: "principal"
-            }
+                as: "principal",
+            },
         },
         {
             $lookup: {
                 from: "users",
                 localField: "affected",
                 foreignField: "_id",
-                as: "affected"
-            }
+                as: "affected",
+            },
         },
         {
             $lookup: {
-                from: "contributions", // Name of the 'Contributions' collection
-                localField: "_id", // The `_id` of the case
-                foreignField: "case", // The `case` field in the Contribution schema
-                as: "contributions" // Field to store the matched contributions
-            }
+                from: "contributions",
+                localField: "_id",
+                foreignField: "case",
+                as: "contributions",
+            },
+        },
+        {
+            $unwind: {
+                path: "$contributions",
+                preserveNullAndEmptyArrays: true, // Keeps cases with no contributions
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "contributions.contributor",
+                foreignField: "_id",
+                as: "contributions.contributor",
+            },
+        },
+        {
+            $group: {
+                _id: "$_id", // Group back by case ID
+                principal: { $first: "$principal" },
+                affected: { $first: "$affected" },
+                bfId: { $first: "$bfId" },
+                status: { $first: "$status" },
+                contributionStatus: { $first: "$contributionStatus" },
+                name: { $first: "$name" },
+                description: { $first: "$description" },
+                contributions: { $push: "$contributions" }, // Rebuild the contributions array
+            },
         },
         {
             $addFields: {
-                totalContributions: { $sum: "$contributions.amount" } // Sum all contributions for the case
-            }
-        }
+                totalContributions: {
+                    $sum: {
+                        $map: {
+                            input: "$contributions",
+                            as: "contribution",
+                            in: "$$contribution.amount",
+                        },
+                    },
+                },
+            },
+        },
     ]);
 
     return res.status(200).json(
