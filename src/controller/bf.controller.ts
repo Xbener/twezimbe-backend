@@ -111,12 +111,15 @@ export const createBf = asyncWrapper(async (req: Request, res: Response) => {
         }
 
         const lastGroupWithBf = await Group.findOne({ has_bf: true }).sort({ createdAt: -1 });
-        let groupCode = "00001"
+        let groupCode = "00001";
+
         if (lastGroupWithBf) {
-            // Extract the last group code and increment it
-            const lastGroupCode = parseInt(lastGroupWithBf._id.toString().slice(4, 9));
-            groupCode = (lastGroupCode + 1).toString().padStart(5, '0');
-        }
+            const lastGroupCodeStr = lastGroupWithBf._id.toString().slice(4, 9); // Adjust slicing if necessary
+            const lastGroupCode = parseInt(lastGroupCodeStr, 10) || 0; // Fallback to 0 if NaN
+            const newCode = lastGroupCode + 1;
+            const totalLength = lastGroupCodeStr.length; // Use the length of the sliced portion
+            groupCode = newCode.toString().padStart(totalLength, "0");
+
         const walletAddress = await generateWallet(groupCode, group?._id!, "Bf")
         // Create the new BF
         const newFund = new Bf({

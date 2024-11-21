@@ -44,12 +44,17 @@ export const signUp = asyncWrapper(async (req: Request, res: Response, next: Nex
     }
 
     // generateWallet
-    const lastPersonWithWallet = await User.findOne({}).sort({ createdAt: -1 });
-    let walletCode = "00001"
+    const lastPersonWithWallet = await User.findOne(
+        { wallet: { $exists: true, $ne: "" } },
+        { wallet: true }
+    ).sort({ createdAt: -1 });
+    let walletCode: string = "00001";
+
     if (lastPersonWithWallet) {
-        // Extract the last group code and increment it
-        const lastWalletcode = parseInt(lastPersonWithWallet._id.toString().slice(4, 9));
-        walletCode = (lastWalletcode + 1).toString().padStart(5, '0');
+        const lastWalletCode = parseInt(lastPersonWithWallet.wallet?.substring(4, 9) || "0", 10);
+        const newCode = lastWalletCode + 1;
+        const totalLength = lastPersonWithWallet.wallet?.substring(4, 9).length || 5;
+        walletCode = newCode.toString().padStart(totalLength, "0");
     }
     const recordedUser = await UserModel.create(req.body);
     const walletAddress = await generateWallet(walletCode, recordedUser._id, "User")
