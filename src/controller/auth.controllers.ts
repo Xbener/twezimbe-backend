@@ -567,7 +567,7 @@ export const createUserWallet = asyncWrapper(async (req, res) => {
     ).sort({ createdAt: -1 });
     let walletCode = "00001"
     if (lastPersonWithWallet?._id) {
-        const lastWalletcode = lastPersonWithWallet.wallet?.toString().slice(4, 8);
+        const lastWalletcode = parseInt(lastPersonWithWallet.wallet?.toString().slice(4, 8)!);
         walletCode = (lastWalletcode! + 1).toString().padStart(5, '0');
     }
     const walletAddress = await generateWallet(walletCode, new mongoose.Types.ObjectId(userId), "User")
