@@ -7,6 +7,7 @@ import UserRole from "../model/user_role"
 import { GenerateOTP, sendEmail } from '../utils/notification.utils';
 import RoleUser from '../model/user_role';
 import { GenerateSalt } from '../utils/password.utils';
+import { generateWallet } from '../utils/generateWallet';
 
 
 
@@ -47,6 +48,16 @@ const facebookStrategy = new FacebookStrategy({
         password: "",
         profile_picture: profile.photos[0]!.value
     });
+    // generateWallet
+    const lastPersonWithWallet = await UserModel.findOne({}).sort({ createdAt: -1 });
+    let walletCode = "00001"
+    if (lastPersonWithWallet) {
+        // Extract the last group code and increment it
+        const lastWalletcode = parseInt(lastPersonWithWallet._id.toString().slice(4, 9));
+        walletCode = (lastWalletcode + 1).toString().padStart(5, '0');
+    }
+    const walletAddress = await generateWallet(walletCode, recordedUser._id, "User")
+    await UserModel.findByIdAndUpdate(recordedUser._id, { wallet: walletAddress })
 
     var emailMessageBody = '';
     if (recordedUser.role === 'Manager') {
@@ -105,7 +116,16 @@ const googleStrategy = new GoogleStrategy({
         password: "",
         profile_picture: profile._json.picture
     });
-
+    // generateWallet
+    const lastPersonWithWallet = await UserModel.findOne({}).sort({ createdAt: -1 });
+    let walletCode = "00001"
+    if (lastPersonWithWallet) {
+        // Extract the last group code and increment it
+        const lastWalletcode = parseInt(lastPersonWithWallet._id.toString().slice(4, 9));
+        walletCode = (lastWalletcode + 1).toString().padStart(5, '0');
+    }
+    const walletAddress = await generateWallet(walletCode, recordedUser._id, "User")
+    await UserModel.findByIdAndUpdate(recordedUser._id, { wallet: walletAddress })
     var emailMessageBody = '';
     if (recordedUser.role === 'Manager') {
         emailMessageBody = `Hello ${recordedUser.lastName},\n\nYour OTP is ${otp}. \n\nClick on the link bellow to validate your account: \n${process.env.FRONTEND_URL}/manager/auth/verifyotp?id=${recordedUser._id}.\n\nBest regards,\n\nTwezimbe`;
