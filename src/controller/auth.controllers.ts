@@ -562,15 +562,18 @@ export const sendCompleteProfileEmail = asyncWrapper(async (req, res) => {
 export const createUserWallet = asyncWrapper(async (req, res) => {
     const { userId } = req.body
     const lastPersonWithWallet = await User.findOne(
-        { walletAddress: { $exists: true, $ne: "" } },
-        { walletAddress: true }
+        { wallet: { $exists: true, $ne: "" } },
+        { wallet: true }
     ).sort({ createdAt: -1 });
-    let walletCode: string | number = "00001"
-    if (lastPersonWithWallet?._id) {
-        const lastWalletcode = parseInt(lastPersonWithWallet.wallet?.slice(4, 9)!);
-        walletCode = lastWalletcode! + 1;
+    let walletCode: string = "00001";
+
+    if (lastPersonWithWallet) {
+        const lastWalletCode = parseInt(lastPersonWithWallet.wallet?.substring(4, 9) || "0", 10);
+        const newCode = lastWalletCode + 1;
+        const totalLength = lastPersonWithWallet.wallet?.substring(4, 9).length || 5;
+        walletCode = newCode.toString().padStart(totalLength, "0");
     }
-    const walletAddress = await generateWallet(`${walletCode}`, new mongoose.Types.ObjectId(userId), "User")
+    const walletAddress = await generateWallet(`${walletCode.length === 5 ? walletCode : "00001"}`, new mongoose.Types.ObjectId(userId), "User")
     await User.findByIdAndUpdate(userId, { wallet: walletAddress })
     res.status(201).json({
         status: true,
