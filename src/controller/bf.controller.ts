@@ -165,7 +165,7 @@ export const getGroupBf = asyncWrapper(async (req: Request, res: Response) => {
     const fundUser = await user_bfModel.findOne({ userId: req?.user?._id, bf_id: fund._id });
 
     // Fetch the wallet associated with the BF
-    const wallet = await Wallet.findOne({ ref: fund._id, refType: 'Bf' }).populate({ path: "transactionHistory.user" });
+    const wallet = await Wallet.findOne({ walletAddress: fund.walletAddress }).populate({ path: "transactionHistory.user" });
 
     const contributions = await contributionModel.find({ walletAddress: fund.walletAddress }).populate('contributor')
     res.status(200).json({
