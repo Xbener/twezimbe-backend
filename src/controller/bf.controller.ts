@@ -587,7 +587,19 @@ export const getCases = asyncWrapper(async (req, res) => {
         {
             $unwind: {
                 path: "$contributions",
-                preserveNullAndEmptyArrays: true, // Keeps cases with no contributions
+                preserveNullAndEmptyArrays: true, 
+            },
+        },
+        {
+            $unwind: {
+                path: "$principal",
+                preserveNullAndEmptyArrays: true, 
+            },
+        },
+        {
+            $unwind: {
+                path: "$affected",
+                preserveNullAndEmptyArrays: true, 
             },
         },
         {
